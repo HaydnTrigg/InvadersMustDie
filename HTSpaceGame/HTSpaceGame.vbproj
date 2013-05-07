@@ -51,19 +51,40 @@
   <PropertyGroup>
     <OptionInfer>On</OptionInfer>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>My Project\app.manifest</ApplicationManifest>
+  </PropertyGroup>
   <ItemGroup>
+    <Import Include="Microsoft" />
     <Import Include="Microsoft.VisualBasic" />
     <Import Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="My Project\" />
+    <EmbeddedResource Include="ViewportWindow.resx">
+      <DependentUpon>ViewportWindow.vb</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Game.vb" />
+    <Compile Include="GameLogic.vb" />
+    <Compile Include="Game\FPS.vb" />
+    <Compile Include="Game\Game.vb" />
+    <Compile Include="Game\Math\GameMath.vb" />
+    <Compile Include="Game\GameTime.vb" />
+    <Compile Include="Game\Math\Vector2D.vb" />
+    <Compile Include="Game\RenderBox.vb">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Objects\GameObject.vb" />
+    <Compile Include="ViewportWindow.vb">
+      <SubType>Form</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="My Project\app.manifest" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
