@@ -69,4 +69,9 @@ Public Class GameMath
         Dim val As Single = 1.0F / Math.Sqrt((vector.X * vector.X) + (vector.Y * vector.Y))
         Return New Vector2(vector.X * val, vector.Y * val)
     End Function
+
+    Public Shared Function Vector2Distance(ByVal a As Vector2, ByVal b As Vector2) As Single
+        'c^2 = a^2 + b^2
+        Return Math.Sqrt(Math.Pow(a.X - b.X, 2) + Math.Pow(a.Y - b.Y, 2))
+    End Function
 End Class

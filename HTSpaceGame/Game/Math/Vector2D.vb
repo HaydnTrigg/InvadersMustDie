@@ -39,6 +39,14 @@ Public Class Vector2
         Return New Vector2(Param1.X * Param2, Param1.Y * Param2)
     End Operator
 
+    'Vector2 * Single
+    Public Shared Operator /(ByVal Param1 As Vector2, ByVal Param2 As Single) As Vector2
+        If (Param2 = 0) Then
+            Param2 = 1
+        End If
+        Return New Vector2(Param1.X / Param2, Param1.Y / Param2)
+    End Operator
+
     Public Function createPoint(ByVal v As Vector2) As Point
         Return New Point(v.X, v.Y)
     End Function

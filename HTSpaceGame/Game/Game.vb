@@ -208,9 +208,6 @@ Namespace HTSpaceGame
                 'Update the Frames Per Second Counter
                 fps.Draw()
 
-                'Clear the backbuffer so a new round of images can be drawn without intefering with the originals.
-                gGraphicsDevice.SpriteBatch.Clear(Color.CornflowerBlue)
-
                 '<<<ALL SPECIFIC DRAWING CODE BELOW HERE>>>
 
                 'Begin the gDraw() Logic Function

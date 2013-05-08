@@ -27,6 +27,9 @@ End Class
 Public Class Ship
     Inherits GameObject
 
+    Public fRotation As Single
+    Public iTextureID As Integer
+
     'Public oGun As New ShipGun(Me)
 
     Sub New(ByVal position As Vector2, ByVal size As Vector2)
@@ -42,6 +45,26 @@ Public Class Ship
         'Update the ships gun
         'oGun.Update(gGameTime, Me)
     End Sub
+End Class
+
+Public Class PlayerShip
+    Inherits Ship
+
+    Public vMovingVector As New Vector2(0, 0)
+
+    Sub New(ByVal position As Vector2, ByVal size As Vector2)
+        MyBase.New(position, size)
+        'Add extra code below
+    End Sub
+
+    'Override Update statement.
+    Public Overloads Sub Update(ByVal gGameTime As GameTime)
+        vPosition += vMovingVector * gGameTime.ElapsedGameTime * 130
+
+        'Update the ships gun
+        'oGun.Update(gGameTime, Me)
+    End Sub
+
 End Class
 
 Public Class ShipGun
