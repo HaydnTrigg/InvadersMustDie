@@ -9,7 +9,7 @@ Imports System.Threading
 Imports System.Windows.Forms
 Imports System.Drawing
 
-Namespace HTSpaceGame
+Namespace IsotopeVB
     'Launch the main function inside of the HTSpaceGame namespace.
     Module mainModule
 
@@ -22,11 +22,12 @@ Namespace HTSpaceGame
     Partial Public Class Game
 
         'Display Window(form)
-        Dim WithEvents Viewport As New ViewportWindow
+        Dim WithEvents gViewport As Viewport
+
+        'Sound Device
 
         'The threads
         Private updateThread As Thread
-        Private drawThread As Thread
 
         'The generic random number generator
         Dim r As New Random
@@ -107,14 +108,6 @@ Namespace HTSpaceGame
         'FPS Counter Object
         Dim fps As New FPS()
 
-        'The graphics device
-        Dim gGraphicsDevice As GraphicsDevice
-        ReadOnly Property gSpriteBatch As Graphics
-            Get
-                Return gGraphicsDevice.SpriteBatch
-            End Get
-        End Property
-
         'Store the time information.
         Dim StartTime As DateTime = DateTime.Now() 'Total time
         Dim LastTime As DateTime = DateTime.Now() 'Total time last update
@@ -129,40 +122,28 @@ Namespace HTSpaceGame
         End Property
 
         Public Sub New()
-                'Setup the display frequency
-                Dim lMode As Integer = -1
-                Dim b As Boolean = EnumDisplaySettings(Nothing, lMode, dm)
-                'Not working, different type of frequency. Find alternative.
-
-                'Load the game content ready for use
-                gLoadContent()
-
-                'Create the new threding for the game's update loop
-                updateThread = New Thread(Sub() Update())
-
-                drawThread = New Thread(Sub() Draw())
+            'Setup the display frequency
+            Dim lMode As Integer = -1
+            Dim b As Boolean = EnumDisplaySettings(Nothing, lMode, dm)
+            'Not working, different type of frequency. Find alternative.
 
 
-                'Show the viewport
-                Viewport.Show()
 
-                Viewport.Text = "SpaceGame"
-                'Make the viewport backcolor black so it dosen't interfere with the GraphicsDevice, also reduces apperance of window resizing opposed to white
-                Viewport.BackColor = Color.Black
-
-                gGraphicsDevice = New GraphicsDevice(Viewport.ClientSize.Width, Viewport.ClientSize.Height)
-                'Initialize the graphics device with the specified quality of the game.
-                'Use high quality bicubic and bilinear interpolation for better image quality
-                gGraphicsDevice.Initialize(Drawing2D.InterpolationMode.High, Drawing2D.SmoothingMode.AntiAlias)
+            'Create the new threding for the game's update loop
+            updateThread = New Thread(Sub() Update())
 
 
-                'Start the games update and draw threads
-                updateThread.Start()
-                drawThread.Start()
-                'Use the STAThread to become the main thread for the viewport draw calls.
-                Application.Run(Viewport)
+            'Create the Viewport
+            gViewport = New Viewport(600, 600, "Space Game")
+            gViewport.VSync = OpenTK.VSyncMode.Adaptive
 
 
+            'Start the games update and draw threads
+            updateThread.Start()
+            'Load the game content ready for use
+            gLoadContent()
+            'Use the STAThread to run the Viewport
+            gViewport.Run()
         End Sub
         Dim gGameTime As GameTime
         'The games update thread (TPS/UPS)
@@ -191,48 +172,25 @@ Namespace HTSpaceGame
 
 
         'The games draw thread (FPS) [Main Thread]
-        Public Sub Draw()
-            While (updateThread.IsAlive)
-                _STARTDRAWTIME = System.Diagnostics.Stopwatch.GetTimestamp
-                If (Viewport.IsDisposed) Then
-                    Exits()
-                    Exit While
-                End If
+        Public Sub Draw() Handles gViewport.RenderFrame
+            If (gViewport.IsExiting) Then
+                Exits()
+            End If
 
-                'Check if the Viewport resolution isnt the same as the GraphicsDevices instanced resolution.
-                If Not (gGraphicsDevice.Width = Viewport.ClientSize.Width AndAlso gGraphicsDevice.Height = Viewport.ClientSize.Height) Then
-                    gGraphicsDevice.ChangeResulution(Viewport.ClientSize.Width, Viewport.ClientSize.Height)
-                    System.Diagnostics.Debug.WriteLine("Resolution has changed to: " + gGraphicsDevice.Width.ToString() + "x" + gGraphicsDevice.Height.ToString())
-                End If
+            'Update the Frames Per Second Counter
+            fps.Draw()
 
-                'Update the Frames Per Second Counter
-                fps.Draw()
+            '<<<ALL SPECIFIC DRAWING CODE BELOW HERE>>>
 
-                '<<<ALL SPECIFIC DRAWING CODE BELOW HERE>>>
+            'Begin the gDraw() Logic Function
+            gDraw_Main()
 
-                'Begin the gDraw() Logic Function
-                gDraw()
+            '<<ALL SPECIFIC DRAWING CODE ABOVE HERE>>>
 
-                '<<ALL SPECIFIC DRAWING CODE ABOVE HERE>>>
-
-                'Send the viewport backbuffer to be drawn by the graphics card inside of the Viewport and its thread (STAThread)
-                Viewport.gDraw(gGraphicsDevice.BackBuffer)
-
-                If (_DRAWTIME <= 1) Then
-                    'If unlimited frames, then run with a 1ms delay. This will stop an overload of CPU.
-                    Thread.Sleep(1)
-                Else
-                    'If framerate is not infinity, iterate with the set delay. Calculate the time difference aswell to ensure there are no problems.
-                    'Calculate the time difference between the draw call and the next frame
-                    Thread.Sleep(Math.Floor(GameMath.Clamp(_DRAWTIME - ((System.Diagnostics.Stopwatch.GetTimestamp - _STARTDRAWTIME) / 10000), 0, _DRAWTIME)))
-                End If
-            End While
-            'Catch any errors and report them to the console.
         End Sub
 
-        Private Sub Exits() Handles Viewport.FormClosing, Viewport.Disposed
+        Private Sub Exits() Handles gViewport.Closing, gViewport.Closed, gViewport.Disposed
             updateThread.Abort()
-            drawThread.Abort()
             End
         End Sub
     End Class

@@ -79,6 +79,11 @@ Public Class Vector2
         Return New SizeF(X, Y)
     End Function
 
+    Public Sub Normalize()
+        Dim val As Single = 1.0F / CSng(Math.Sqrt((X * X) + (Y * Y)))
+        X *= val
+        Y *= val
+    End Sub
 
 
 End Class
