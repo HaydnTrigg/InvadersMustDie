@@ -24,8 +24,6 @@ Namespace IsotopeVB
         'Display Window(form)
         Dim WithEvents gViewport As Viewport
 
-        'Sound Device
-
         'The threads
         Private updateThread As Thread
 
