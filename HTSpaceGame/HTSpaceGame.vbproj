@@ -60,20 +60,18 @@
     <Import Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GameLogic.vb" />
-    <Compile Include="Game\FPS.vb" />
-    <Compile Include="Game\Game.vb" />
-    <Compile Include="Game\Math\GameMath.vb" />
-    <Compile Include="Game\GameTime.vb" />
-    <Compile Include="Game\Math\GraphicsMath.vb" />
-    <Compile Include="Game\Math\Vector2D.vb" />
-    <Compile Include="Game\RenderBox.vb">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Game\Types\Image.vb" />
-    <Compile Include="Game\Types\IProperties.vb" />
-    <Compile Include="Objects\GameObject.vb" />
-    <Compile Include="Viewport.vb" />
+    <Compile Include="Engine\Quadtree.vb" />
+    <Compile Include="Game\GameLogic.vb" />
+    <Compile Include="Engine\FPS.vb" />
+    <Compile Include="Engine\Game.vb" />
+    <Compile Include="Engine\Math\GameMath.vb" />
+    <Compile Include="Engine\GameTime.vb" />
+    <Compile Include="Engine\Math\GraphicsMath.vb" />
+    <Compile Include="Engine\Math\Vector2.vb" />
+    <Compile Include="Engine\Types\Image.vb" />
+    <Compile Include="Engine\Types\IProperties.vb" />
+    <Compile Include="Game\Objects\GameObject.vb" />
+    <Compile Include="Engine\Viewport.vb" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="OpenTK, Version=1.1.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
@@ -96,11 +94,32 @@
     <Content Include="Resources\BackgroundOverlay.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Resources\overdraw.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Resources\Cursor.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Halo4_Remix.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Lazer.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\OpenTK.dll" />
     <Content Include="Resources\ship.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Skull.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Square.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Music.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Title.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
