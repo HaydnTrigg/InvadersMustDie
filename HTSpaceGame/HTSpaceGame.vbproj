@@ -83,43 +83,49 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="My Project\app.manifest" />
+    <None Include="Resources\Textures\Entity\Revolver\Revolver_120.pdn" />
+    <None Include="Resources\Textures\Entity\Revolver\Revolver_60.pdn" />
+    <None Include="Resources\Textures\Entity\Spinner\Spinner.pdn" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Resources\Avatar.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\background.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\BackgroundOverlay.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\overdraw.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\Cursor.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\Halo4_Remix.wav">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\Lazer.wav">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <Content Include="Resources\Halo4_Remix.wav" />
+    <Content Include="Resources\Lazer.wav" />
+    <Content Include="Resources\Music.wav" />
     <Content Include="Resources\OpenTK.dll" />
-    <Content Include="Resources\ship.png">
+    <Content Include="Resources\Textures\Engine\overdraw1x1.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Skull.png">
+    <Content Include="Resources\Textures\Entity\Arrow\ship.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Square.png">
+    <Content Include="Resources\Textures\Entity\Explosion\Explosion_PartA.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Music.wav">
+    <Content Include="Resources\Textures\Entity\Revolver\Revolver_PartA.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Title.png">
+    <Content Include="Resources\Textures\Entity\Revolver\Revolver_PartB.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\Entity\Revolver\Revolver_PartC.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\Entity\Spinner\Spinner_PartA.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\Entity\Spinner\Spinner_PartB.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\Misc\background.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\Misc\cursor.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\Misc\logo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\Misc\overlay.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

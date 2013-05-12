@@ -141,8 +141,8 @@ Namespace IsotopeVB
         Dim gGameTime As GameTime
 
         'GDI+ Backbuffer and Graphics Device for traditional WindowsForms rendering
-        Public BackBuffer As Bitmap
-        Public SpriteBatch As Graphics
+        'Public BackBuffer As Bitmap
+        'Public SpriteBatch As Graphics
 
         Public Sub New()
             'Setup the display frequency
@@ -154,12 +154,9 @@ Namespace IsotopeVB
             updateThread = New Thread(Sub() Update())
 
             'Create the Viewport
-            gViewport = New Viewport(600, 600, "Game")
+            gViewport = New Viewport(800, 800, "Game")
 
             gViewport.VSync = OpenTK.VSyncMode.Adaptive
-
-            'Setup the GDI+ Backbuffers using the ResolutionChange Sub Function
-            ResolutionChange()
 
             'Load the game content ready for use
             gLoadContent()
@@ -209,24 +206,19 @@ Namespace IsotopeVB
             GL.MatrixMode(MatrixMode.Projection)
             GL.LoadIdentity()
             'Setup Orthographic Rendering see: http://en.wikipedia.org/wiki/Orthographic_projection
-            GL.Ortho(0, gViewport.Width, gViewport.Height, 0, -1, 1)
+            GL.Ortho(0, gViewport.Width / gViewport.ViewportScale, gViewport.Height / gViewport.ViewportScale, 0, -1, 1)
             'Creates the Viewport at 0,0 with its Width and Height
             GL.Viewport(0, 0, gViewport.Width, gViewport.Height)
 
             GL.Enable(EnableCap.Texture2D)
 
             'Clears the GDI+ Backbuffer
-            SpriteBatch.Clear(Color.FromArgb(0, 0, 0, 0))
+            'SpriteBatch.Clear(Color.FromArgb(0, 0, 0, 0))
             '<<<ALL SPECIFIC DRAWING CODE BELOW HERE>>>
 
             'Begin the gDraw() Logic Function
             gDraw_Main()
-
-                    Dim data As BitmapData = BackBuffer.LockBits(New Rectangle(0, 0, BackBuffer.Width, BackBuffer.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb)
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, data.Width, data.Height, 0, OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0)
-            BackBuffer.UnlockBits(data)
-
-            DrawBackbuffer(New Vector2(0, 0), New Vector2(gViewport.Width, gViewport.Height))
+            'gDraw_Backbuffer()
 
             '<<ALL SPECIFIC DRAWING CODE ABOVE HERE>>>
 
@@ -244,11 +236,12 @@ Namespace IsotopeVB
             End
         End Sub
 
-        Private Sub ResolutionChange() Handles gViewport.Resize
-            'Create a Bitmap Backbuffer and GDI+ Graphics Interface "SpriteBatch"
-            BackBuffer = New Bitmap(GameMath.ClampI(gViewport.Width, 1, Integer.MaxValue), GameMath.ClampI(gViewport.Height, 1, Integer.MaxValue))
-            SpriteBatch = Graphics.FromImage(BackBuffer)
-        End Sub
+        'Private Sub gDraw_Backbuffer()
+        'Dim data As BitmapData = BackBuffer.LockBits(New Rectangle(0, 0, BackBuffer.Width, BackBuffer.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb)
+        '   GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, data.Width, data.Height, 0, OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0)
+        '   BackBuffer.UnlockBits(data)
+        '   DrawBackbuffer(New Vector2(0, 0), New Vector2(gViewport.Width, gViewport.Height))
+        'End Sub
     End Class
 End Namespace
 

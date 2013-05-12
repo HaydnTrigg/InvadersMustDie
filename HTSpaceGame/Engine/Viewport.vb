@@ -14,11 +14,11 @@ Namespace IsotopeVB
         'Stores the viewport's 2d relative position
         Public ViewportPosition As New Vector2(0, 0)
         Public ViewportBoundary As Single = 25.0F
-        Public ViewportRealSize As New Vector2(400, 400)
+        Public ViewportRealSize As New Vector2(800, 800)
 
-        ReadOnly Property ViewportScale As Vector2
+        ReadOnly Property ViewportScale As Single
             Get
-                Return ViewportSize / ViewportRealSize
+                Return ViewportSize.X / ViewportRealSize.X
             End Get
         End Property
 
@@ -30,7 +30,7 @@ Namespace IsotopeVB
 
         ReadOnly Property MousePosition As Vector2
             Get
-                Return New Vector2(Mouse.X, Mouse.Y) + ViewportPosition
+                Return New Vector2(Mouse.X, Mouse.Y) / ViewportScale + ViewportPosition
             End Get
         End Property
 
