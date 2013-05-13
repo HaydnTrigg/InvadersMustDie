@@ -14,6 +14,14 @@ Imports HTSpaceGame.IsotopeVB
 'This is the master class for all of the games objects. It includes the functions avaliable to all objects aswell as 
 'any variables that are specificaly required by any object.
 Public Class GameObject
+    Enum ObjectType
+        Player = 0
+        Enemy = 1
+        Bullet = 2
+        Other = 3
+    End Enum
+
+
     'Stores the position of the Object
     Public vPosition As Vector2
     'Stores the size of the Object
@@ -32,6 +40,7 @@ Public Class GameObject
     Public movement As New Vector2(1, 0)
     Public fLifetime As Single
     Public fLifetimeMax As Single = Single.MaxValue
+    Public eEntity As ObjectType = ObjectType.Other
 
     Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _TextureID() As Integer)
         vPosition = _Position
@@ -55,6 +64,7 @@ Public Class PlayerShip
     Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _TextureID() As Integer)
         MyBase.New(_Position, _Size, _TextureID)
         'Add extra code below
+        eEntity = ObjectType.Player
     End Sub
 
     'Override Update statement.
@@ -105,7 +115,7 @@ Public Class Spinner
         fSpeedMax = 150.0F
 
         'Add extra code below
-
+        eEntity = ObjectType.Enemy
 
     End Sub
 
@@ -150,7 +160,7 @@ Public Class Revolver
 
         'Add extra code below
 
-
+        eEntity = ObjectType.Enemy
     End Sub
 
     'Override Update statement.
@@ -168,8 +178,8 @@ Public Class Revolver
     End Sub
 
     Public Overrides Sub Draw(ByVal gGameTime As GameTime, ByVal gViewport As Viewport)
-        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, -fRotation * 1.1)
-        Draw2dRotated(gViewport, iTextureIdentification(1), vPosition, vSize, fRotation)
+        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, -fRotation * 2.0F)
+        Draw2dRotated(gViewport, iTextureIdentification(1), vPosition, vSize, fRotation * 1.5F)
         Draw2dRotated(gViewport, iTextureIdentification(2), vPosition, vSize, 0)
     End Sub
 End Class
@@ -183,15 +193,20 @@ Public Class Explosion
     Dim cColor As Color4
     Dim cDrawColor As Color4
 
-    'Create a completely random explosion effect
+    'Create a completely random explosion effect with a particle level of 1
     Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer)
-        Me.New(_Position, _Size, _Random, _TextureID,(New Color4() {New Color4(1.0F, 0.0F, 0.0F, 0.0F), New Color4(0.0F, 1.0F, 0.0F, 0.0F), New Color4(0.0F, 0.5803922F, 1.0F, 0.0F), New Color4(1.0F, 0.3529412F, 0.20784314F, 0.0F), New Color4(255, 0.0F, 0.8627451F, 0.0F), New Color4(0.698039234F, 0.0F, 1.0F, 0.0F), New Color4(1.0F, 0.847058833F, 0.0F, 0)})(GameMath.ClampI(_Random.NextDouble() * 6, 0, 6)))
+        Me.New(_Position, _Size, _Random, _TextureID, 1, (New Color4() {New Color4(1.0F, 0.0F, 0.0F, 0.0F), New Color4(0.0F, 1.0F, 0.0F, 0.0F), New Color4(0.0F, 0.5803922F, 1.0F, 0.0F), New Color4(1.0F, 0.3529412F, 0.20784314F, 0.0F), New Color4(255, 0.0F, 0.8627451F, 0.0F), New Color4(0.698039234F, 0.0F, 1.0F, 0.0F), New Color4(1.0F, 0.847058833F, 0.0F, 0)})(GameMath.ClampI(_Random.NextDouble() * 6, 0, 6)))
+    End Sub
+
+    'Create a completely random explosion effect
+    Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer, ByVal _ParticleLevel As Single)
+        Me.New(_Position, _Size, _Random, _TextureID, _ParticleLevel, (New Color4() {New Color4(1.0F, 0.0F, 0.0F, 0.0F), New Color4(0.0F, 1.0F, 0.0F, 0.0F), New Color4(0.0F, 0.5803922F, 1.0F, 0.0F), New Color4(1.0F, 0.3529412F, 0.20784314F, 0.0F), New Color4(255, 0.0F, 0.8627451F, 0.0F), New Color4(0.698039234F, 0.0F, 1.0F, 0.0F), New Color4(1.0F, 0.847058833F, 0.0F, 0)})(GameMath.ClampI(_Random.NextDouble() * 6, 0, 6)))
     End Sub
 
     'Create a defined explosion effect
-    Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer, ByVal _Color As Color4)
+    Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer, ByVal _ParticleLevel As Single, ByVal _Color As Color4)
         MyBase.New(_Position, _Size, _TextureID)
-        Dim iParticleCount As Integer = 100
+        Dim iParticleCount As Integer = GameMath.ClampI(50 * _ParticleLevel, 0, Integer.MaxValue) - 1
         'Create 200 points inside of Size
         vPositions = New Vector2(iParticleCount) {}
         vSpeed = New Single(iParticleCount) {}
@@ -204,6 +219,7 @@ Public Class Explosion
         Next
         fLifetimeMax = 2.0F
         cColor = _Color
+        eEntity = ObjectType.Other
     End Sub
 
     Public Overrides Sub Update(ByVal gGameTime As GameTime, ByVal gRandom As System.Random, ByVal _Target As Vector2)

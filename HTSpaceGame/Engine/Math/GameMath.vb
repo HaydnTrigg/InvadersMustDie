@@ -1,8 +1,4 @@
-﻿Imports System
-Imports System.Threading
-Imports System.Windows.Forms
-Imports System.Drawing
-Public Class GameMath
+﻿Public Class GameMath
 
     'Single precision clamp function for code optimisation
     Public Shared Function ClampF(ByVal value As Single, ByVal min As Single, ByVal max As Single) As Single

@@ -14,7 +14,8 @@ Namespace IsotopeVB
         'Stores the viewport's 2d relative position
         Public ViewportPosition As New Vector2(0, 0)
         Public ViewportBoundary As Single = 25.0F
-        Public ViewportRealSize As New Vector2(800, 800)
+        Public ViewportRealSize As New Vector2(1600, 1600)
+        Public ViewportTargetSize As New Vector2(800, 800)
 
         ReadOnly Property ViewportScale As Single
             Get
@@ -40,5 +41,20 @@ Namespace IsotopeVB
 
 
         End Sub
+
+        Public Sub Update(ByVal gGameTime As GameTime)
+            ViewportRealSize = GameMath.Lerp(ViewportRealSize, ViewportTargetSize, gGameTime.ElapsedGameTime * 1.75F)
+            Dim v As Vector2 = ViewportRealSize - ViewportTargetSize
+            If ModS(v.X) < 3.5F Or ModS(v.Y) < 3.5F Then
+                ViewportRealSize = ViewportTargetSize
+            End If
+        End Sub
+        Public Function ModS(ByVal _Single As Single) As Single
+            If _Single < 0 Then
+                Return _Single * -1
+            End If
+            Return _Single
+        End Function
+
     End Class
 End Namespace

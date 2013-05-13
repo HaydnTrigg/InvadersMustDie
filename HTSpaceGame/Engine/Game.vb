@@ -14,17 +14,13 @@
 'This is the primary backbone framework for the engine.
 
 Imports System.Threading
-Imports System.Windows.Forms
-Imports System.Drawing
 Imports System.Runtime.InteropServices
-Imports System.Drawing.Imaging
-Imports System.Collections.Generic
 Imports OpenTK
 Imports OpenTK.Graphics
 Imports OpenTK.Graphics.OpenGL
-Imports OpenTK.Input
 Imports HTSpaceGame.IsotopeVB.GraphicsMath
-Imports System.Media
+
+#Const DEBUGNOTIFY = False
 
 Namespace IsotopeVB
     'Launch the main function inside of the HTSpaceGame namespace.
@@ -41,54 +37,27 @@ Namespace IsotopeVB
         'Display Window(form)
         Dim WithEvents gViewport As Viewport
 
+        'Does the game use an effect thread?
+        Dim bEffectThread As Boolean
+
         'The threads
         Private updateThread As Thread
+        Private effectThread As Thread
 
         'The generic random number generator
         Dim gRandom As New Random
 
-        Public Const SA_SIZE As Integer = 32
-        'Windows Graphics Device Intefrace Structure http://msdn.microsoft.com/en-us/library/windows/desktop/dd183565%28v=vs.85%29.aspx
+        'Keyboard States
+        Dim gPreviousKeyboardState As OpenTK.Input.KeyboardState = OpenTK.Input.Keyboard.GetState()
+        Dim gCurrentKeyboardState As OpenTK.Input.KeyboardState = OpenTK.Input.Keyboard.GetState()
 
-        Structure DEVMODE
-            Public iSpecVersion As Short
-            Public iDriverVersion As Short
-            Public iSize As Short
-            Public iDriverExtra As Short
-            Public iFields As Integer
-            Public iOrientation As Short
-            Public iPaperSize As Short
-            Public iPaperLength As Short
-            Public iPaperWidth As Short
-            Public iScale As Short
-            Public iCopies As Short
-            Public iDefaultSource As Short
-            Public iPrintQuality As Short
-            Public iColor As Short
-            Public iDuplex As Short
-            Public iYRes As Short
-            Public iTTOption As Short
-            Public iCollate As Short
-            Public lpszFormName As String
-            Public iLogPixels As Short
-            Public iBitsPerPixel As Integer
-            Public lPelsWidth As Integer
-            Public lPelsHeight As Integer
-            Public lDisplayFlags As Integer
-            Public lDisplayFreq As Integer
-            Public lICMMethod As Integer
-            Public lICMIntent As Integer
-            Public lMediaType As Integer
-            Public lDitherType As Integer
-            Public lReserved1 As Integer
-            Public lReserved2 As Integer
-            Public lPanWidth As Integer
-            Public lPanHeight As Integer
-        End Structure
-        Dim dm As New DEVMODE
-        'Information and documentation @ http://msdn.microsoft.com/en-au/library/windows/desktop/dd145203%28v=vs.85%29.aspx
-        'Microsoft Windows API Graphics Device Interface EnumDisplaySettings http://msdn.microsoft.com/en-us/library/windows/desktop/dd162611%28v=vs.85%29.aspx
-        Public Declare Auto Function EnumDisplaySettings Lib "user32" (ByVal lpszDeviceName As String, ByVal lModeNum As Integer, ByRef lpdm As DEVMODE) As Boolean
+        'Mouse States
+        Dim gPreviousMouseState As OpenTK.Input.MouseState = OpenTK.Input.Mouse.GetState()
+        Dim gCurrentMouseState As OpenTK.Input.MouseState = OpenTK.Input.Mouse.GetState()
+
+        'Gamepad States - BROKEN
+        'Dim gPreviousGamePadState As OpenTK.Input.GamePadState = OpenTK.Input.GamePad.GetState()
+        'Dim gCurrentGamePadState As OpenTK.Input.GamePadState = OpenTK.Input.GamePad.GetState()
 
         'Load the "user32.dll" and create the GetKeyboardState Function
         <DllImport("user32.dll")>
@@ -110,13 +79,16 @@ Namespace IsotopeVB
         Private Declare Function GetCursorPos Lib "user32" (ByVal lpPoint As PointerPositionAPI) As Long
         Dim gPointerPosition As PointerPositionAPI
 
-
+        'Integer that contains an amount of CPU Master Threads avaliable to the computer, recognised as cores
+        Dim gCoreCount As Integer = System.Environment.ProcessorCount
         'Integer to return a refresh rate. "ID116"
         Private Const _REFRESH As Long = 116
         'Constant update of 60 ticks per second.
         Private _UPDATETIME As Double = 1000D / 60D
-        'Used to store the start time of the draw call. This will remove the up/down fps.
+        'Used to store the start time of the update call. This will remove the up/down fps.
         Private _STARTUPDATETIME As Double = 0
+        'Used to store the start time of the effect call. This will remove the up/down fps.
+        Private _STARTEFFECTTIME As Double = 0
         'Variable update of # frames per second.
         'Note: Using a Double integer to timing precision.
         Private _DRAWTIME As Double = 0
@@ -145,13 +117,8 @@ Namespace IsotopeVB
         'Public SpriteBatch As Graphics
 
         Public Sub New()
-            'Setup the display frequency
-            Dim lMode As Integer = -1
-            Dim b As Boolean = EnumDisplaySettings(Nothing, lMode, dm)
-            'Not working, different type of frequency. Find alternative.
-
-            'Create the new threding for the game's update loop
-            updateThread = New Thread(Sub() Update())
+            'Create the gameTime
+            gGameTime = getGameTime
 
             'Create the Viewport
             gViewport = New Viewport(800, 800, "Game")
@@ -161,19 +128,62 @@ Namespace IsotopeVB
             'Load the game content ready for use
             gLoadContent()
 
-            'Start the games update and draw threads
+            'WARNING: MUST BE STARTED BEFORE EFFECT THREAD DUE TO DEPENDENCY
+            'Create the new threding for the game's update loop
+            updateThread = New Thread(Sub() Update())
+
+            'Create the new threding for the game's update loop
+            effectThread = New Thread(Sub() UpdateEffects())
+
+            'Start the games update and effects
             updateThread.Start()
+
 
             'Use the STAThread to run the Viewport
             gViewport.Run()
         End Sub
 
+        'The game function that handels the effectThread
+        Public Sub UpdateEffects()
+            While effectThread.IsAlive And updateThread.IsAlive
+#If Not DEBUG Then
+            Try
+#End If
+                _STARTEFFECTTIME = System.Diagnostics.Stopwatch.GetTimestamp
+                'DEBUGTEXT Console.WriteLine(gGameTime.TotalGameTime.ToString() + ":EFFECT")
+                'Update the effects
+                gUpdateEffects(gGameTime)
+#If DEBUG And DEBUGNOTIFY Then
+                Console.WriteLine("UpdateEffects(" + gGameTime.TotalGameTime.ToString() + ") Finished")
+#End If
+
+                Thread.Sleep(GameMath.Clamp(_UPDATETIME - ((System.Diagnostics.Stopwatch.GetTimestamp - _STARTEFFECTTIME) / 1000), 0, _UPDATETIME))
+#If Not DEBUG Then
+            Catch ex As Exception
+                Console.WriteLine(ex.Message)
+            End Try
+#End If
+            End While
+            Exits()
+        End Sub
+
         'The games update thread (TPS/UPS)
         Public Sub Update()
+            If gCoreCount >= 2 Then
+                bEffectThread = True
+                effectThread.Start()
+            End If
             While updateThread.IsAlive
+#If Not DEBUG Then
+            Try
+#End If
                 _STARTUPDATETIME = System.Diagnostics.Stopwatch.GetTimestamp
                 'Update the gametime ready for this update iteration
                 gGameTime = getGameTime
+
+                'Update the Keyboard+Mouse State
+                gCurrentKeyboardState = OpenTK.Input.Keyboard.GetState()
+                gCurrentMouseState = OpenTK.Input.Mouse.GetState()
 
                 'Get the pointer position ready to use this update iteration
 
@@ -184,14 +194,32 @@ Namespace IsotopeVB
                 'Update the fps counter
                 fps.Update(gGameTime)
 
+                If Not bEffectThread Then
+                    gUpdateEffects(gGameTime)
+                End If
+
+                'Update the Keyboard+Mouse State
+                gPreviousMouseState = gCurrentMouseState
+                gPreviousKeyboardState = gCurrentKeyboardState
+#If DEBUG And DEBUGNOTIFY Then
+                Console.WriteLine("Update(" + gGameTime.TotalGameTime.ToString() + ") Finished")
+#End If
                 Thread.Sleep(GameMath.Clamp(_UPDATETIME - ((System.Diagnostics.Stopwatch.GetTimestamp - _STARTUPDATETIME) / 1000), 0, _UPDATETIME))
+#If Not DEBUG Then
+            Catch ex As Exception
+                Console.WriteLine(ex.Message)
+            End Try
+#End If
             End While
-            'Catch any errors and report them to the console.
+            Exits()
         End Sub
 
 
         'The games draw thread (FPS) [Main Thread]
         Public Sub Draw() Handles gViewport.RenderFrame
+#If Not DEBUG Then
+            Try
+#End If
             If (gViewport.IsExiting) Then
                 Exits()
             End If
@@ -199,8 +227,7 @@ Namespace IsotopeVB
             'Update the Frames Per Second Counter
             fps.Draw()
 
-            'Clears the Viewport to the popular 2D CornflowerBlue
-            GL.ClearColor(Color.CornflowerBlue)
+            GL.ClearColor(Color4.Black)
             'Clears the Bugger Masks ready for 2D Drawing
             GL.Clear(ClearBufferMask.ColorBufferBit Or ClearBufferMask.DepthBufferBit)
             GL.MatrixMode(MatrixMode.Projection)
@@ -229,6 +256,14 @@ Namespace IsotopeVB
             GL.Flush()
             'Swap the buffers around, 0-1, 1-0 "Double Buffering" ready for the next frame.
             gViewport.SwapBuffers()
+#If DEBUG And DEBUGNOTIFY Then
+            Console.WriteLine("Draw(" + gGameTime.TotalGameTime.ToString() + ") Finished")
+#End If
+#If Not DEBUG Then
+            Catch ex As Exception
+                Console.WriteLine(ex.Message)
+            End Try
+#End If
         End Sub
 
         Private Sub Exits() Handles gViewport.Closing, gViewport.Closed, gViewport.Disposed
