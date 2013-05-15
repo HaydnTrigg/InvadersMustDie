@@ -1,15 +1,14 @@
-﻿Imports System.Windows.Forms
-Imports System.Drawing
-Imports System.Drawing.Imaging
-Imports System.Collections.Generic
+﻿
+'Import parts of the OpenTK Framework
 Imports OpenTK
 Imports OpenTK.Graphics
 Imports OpenTK.Graphics.OpenGL
 Imports OpenTK.Input
-Imports HTSpaceGame.IsotopeVB.GraphicsMath
-Imports System.Media
-Imports HTSpaceGame.IsotopeVB.Quadtree
-Imports HTSpaceGame.IsotopeVB
+
+'Import parts of the Isotope Framework
+Imports HTSpaceGame.Isotope.Quadtree
+Imports HTSpaceGame.Isotope
+Imports HTSpaceGame.Isotope.GraphicsMath
 
 'This is the master class for all of the games objects. It includes the functions avaliable to all objects aswell as 
 'any variables that are specificaly required by any object.
@@ -70,13 +69,13 @@ Public Class PlayerShip
     'Override Update statement.
     Public Overrides Sub Update(ByVal gGameTime As GameTime, ByVal gRandom As Random, ByVal _Target As Vector2)
         If Not bBoosting Then
-            fSpeed = GameMath.Clamp(fSpeed, 0, fSpeedMax)
+            fSpeed = GameMath.ClampF(fSpeed, 0, fSpeedMax)
         Else
             fSpeed += fAcceleration * gGameTime.ElapsedGameTime
-            fSpeed = GameMath.Clamp(fSpeed, 0, fBoostSpeedMax)
+            fSpeed = GameMath.ClampF(fSpeed, 0, fBoostSpeedMax)
         End If
 
-        If GameMath.Vector2Distance(_Target, vPosition) > 5 Then
+        If VectorMath.Vector2Distance(_Target, vPosition) > 5 Then
             movement = _Target - vPosition
 
             fRotation = GameMath.Lerp(fRotation, movement.Rotation() + (Math.PI * 0.5F), 1)
@@ -87,11 +86,11 @@ Public Class PlayerShip
             movement.Normalize()
         End If
         vPosition += movement * (gGameTime.ElapsedGameTime * fSpeed)
-        vPosition = GameMath.Clamp(vPosition, vSize / 2, New Vector2(1000.0F) - vSize / 2)
+        vPosition = GameMath.ClampV(vPosition, vSize / 2, New Vector2(1000.0F) - vSize / 2)
     End Sub
 
     Public Overrides Sub Draw(ByVal gGameTime As GameTime, ByVal gViewport As Viewport)
-        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, fRotation)
+Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, fRotation)
     End Sub
 End Class
 
@@ -122,14 +121,15 @@ Public Class Spinner
     'Override Update statement.
     Public Overrides Sub Update(ByVal gGameTime As GameTime, ByVal gRandom As Random, ByVal _Target As Vector2)
         'fSpeed = GameMath.ClampF(fSpeed, 0, fSpeedMax)
-        movement = GameMath.Lerp(movement, GameMath.NormalizeVector2(_Target - vPosition), gGameTime.ElapsedGameTime / (1 + fDumbness))
+        movement = GameMath.Lerp(movement, VectorMath.NormalizeVector2(_Target - vPosition), gGameTime.ElapsedGameTime / (1 + fDumbness))
 
         If (movement.X = 0 And movement.Y = 0) Then
-            movement = GameMath.NormalizeVector2(New Vector2(0, 1))
+            movement = New Vector2(0, 1)
+            movement.Normalize()
         End If
 
         vPosition += movement * gGameTime.ElapsedGameTime * fSpeed
-        vPosition = GameMath.Clamp(vPosition, vSize / 2, New Vector2(1000.0F) - vSize / 2)
+        vPosition = GameMath.ClampV(vPosition, vSize / 2, New Vector2(1000.0F) - vSize / 2)
         fRotation += gGameTime.ElapsedGameTime * (0.5F + gRandom.NextDouble()) * 3
     End Sub
 
@@ -166,14 +166,14 @@ Public Class Revolver
     'Override Update statement.
     Public Overrides Sub Update(ByVal gGameTime As GameTime, ByVal gRandom As Random, ByVal _Target As Vector2)
         'fSpeed = GameMath.ClampF(fSpeed, 0, fSpeedMax)
-        movement = GameMath.Lerp(movement, GameMath.NormalizeVector2(_Target - vPosition), gGameTime.ElapsedGameTime / (1 + fDumbness))
+        movement = GameMath.Lerp(movement, VectorMath.NormalizeVector2(_Target - vPosition), gGameTime.ElapsedGameTime / (1 + fDumbness))
 
         If (movement.X = 0 And movement.Y = 0) Then
-            movement = GameMath.NormalizeVector2(New Vector2(0, 1))
+            movement = VectorMath.NormalizeVector2(New Vector2(0, 1))
         End If
 
         vPosition += movement * gGameTime.ElapsedGameTime * fSpeed
-        vPosition = GameMath.Clamp(vPosition, vSize / 2, New Vector2(1000.0F) - vSize / 2)
+        vPosition = GameMath.ClampV(vPosition, vSize / 2, New Vector2(1000.0F) - vSize / 2)
         fRotation += gGameTime.ElapsedGameTime * (0.5F + gRandom.NextDouble()) * 3
     End Sub
 
@@ -186,25 +186,23 @@ End Class
 
 Public Class Explosion
     Inherits GameObject
+    'GameMath.ClampI(_Random.NextDouble() * 6, 0, 6)
 
+    'Array to hold all of the Particle positions
     Dim vPositions() As Vector2 = New Vector2() {}
+    'Array to hold the Particle movement normals.
     Dim vParticleMovement() As Vector2 = New Vector2() {}
+    'Array to hold all of the Particles speed.
     Dim vSpeed() As Single = New Single() {}
-    Dim cColor As Color4
+    'The color of the particles
+    Dim cColorTarget As Color4
+    'The current drawing color of the particles.
     Dim cDrawColor As Color4
-
-    'Create a completely random explosion effect with a particle level of 1
-    Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer)
-        Me.New(_Position, _Size, _Random, _TextureID, 1, (New Color4() {New Color4(1.0F, 0.0F, 0.0F, 0.0F), New Color4(0.0F, 1.0F, 0.0F, 0.0F), New Color4(0.0F, 0.5803922F, 1.0F, 0.0F), New Color4(1.0F, 0.3529412F, 0.20784314F, 0.0F), New Color4(255, 0.0F, 0.8627451F, 0.0F), New Color4(0.698039234F, 0.0F, 1.0F, 0.0F), New Color4(1.0F, 0.847058833F, 0.0F, 0)})(GameMath.ClampI(_Random.NextDouble() * 6, 0, 6)))
-    End Sub
-
-    'Create a completely random explosion effect
-    Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer, ByVal _ParticleLevel As Single)
-        Me.New(_Position, _Size, _Random, _TextureID, _ParticleLevel, (New Color4() {New Color4(1.0F, 0.0F, 0.0F, 0.0F), New Color4(0.0F, 1.0F, 0.0F, 0.0F), New Color4(0.0F, 0.5803922F, 1.0F, 0.0F), New Color4(1.0F, 0.3529412F, 0.20784314F, 0.0F), New Color4(255, 0.0F, 0.8627451F, 0.0F), New Color4(0.698039234F, 0.0F, 1.0F, 0.0F), New Color4(1.0F, 0.847058833F, 0.0F, 0)})(GameMath.ClampI(_Random.NextDouble() * 6, 0, 6)))
-    End Sub
+    'The size the particles for drawing.
+    Dim vDrawSize As New Vector2(12.0F, 1.50F)
 
     'Create a defined explosion effect
-    Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer, ByVal _ParticleLevel As Single, ByVal _Color As Color4)
+    Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer, ByVal _ParticleLevel As Single, ByVal _ColorTarget As Color4, ByVal _Lifetime As Single)
         MyBase.New(_Position, _Size, _TextureID)
         Dim iParticleCount As Integer = GameMath.ClampI(50 * _ParticleLevel, 0, Integer.MaxValue) - 1
         'Create 200 points inside of Size
@@ -217,39 +215,43 @@ Public Class Explosion
             vParticleMovement(i).Normalize()
             vPositions(i) = vPosition
         Next
-        fLifetimeMax = 2.0F
-        cColor = _Color
+        fLifetimeMax = _Lifetime
+        cColorTarget = _ColorTarget
         eEntity = ObjectType.Other
     End Sub
 
     Public Overrides Sub Update(ByVal gGameTime As GameTime, ByVal gRandom As System.Random, ByVal _Target As Vector2)
+        'Iterate through all of the particles inside of this Object
         For i As Integer = 0 To vParticleMovement.Length - 1
-            vSpeed(i) -= gGameTime.ElapsedGameTime / 4
-            If vPositions(i).X > 995 Or vPositions(i).X < 5 Then
+            'Slow the particle by a 7th of the current particles speed. X = X-X(delta/7)
+            vSpeed(i) -= vSpeed(i) * gGameTime.ElapsedGameTime / -7
+
+            'Check if the particle collides with the boundary on the X axis.
+            If vPositions(i).X > 995.0F Or vPositions(i).X < 5.0F Then
                 vParticleMovement(i).X *= -1
+            Else
+                'Check if the particle collides with the boundary on the Y axis.
+                If vPositions(i).Y > 995.0F Or vPositions(i).Y < 5.0F Then
+                    vParticleMovement(i).Y *= -1
+                End If
             End If
-            If vPositions(i).Y > 995 Or vPositions(i).Y < 5 Then
-                vParticleMovement(i).Y *= -1
-            End If
-
-            vPositions(i) = GameMath.Clamp(vPositions(i), New Vector2(5, 5), New Vector2(995, 995))
-
-
-            vPositions(i) += vParticleMovement(i) * vSpeed(i) * gGameTime.ElapsedGameTime
+            vPositions(i) = GameMath.ClampVS(vPositions(i) + (vParticleMovement(i) * vSpeed(i) * gGameTime.ElapsedGameTime), 4.0F, 4.0F, 996.0F, 996.0F)
         Next
+        'Add the time to the particles current lifetime.
         fLifetime += gGameTime.ElapsedGameTime
-        cDrawColor.R = GameMath.Lerp(cColor.R / 2 + 0.5F, cColor.R, fLifetime / fLifetimeMax)
-        cDrawColor.G = GameMath.Lerp(cColor.G / 2 + 0.5F, cColor.G, fLifetime / fLifetimeMax)
-        cDrawColor.B = GameMath.Lerp(cColor.B / 2 + 0.5F, cColor.B, fLifetime / fLifetimeMax)
-        cDrawColor.A = GameMath.Lerp(1.0F, cColor.A, fLifetime / fLifetimeMax)
-    End Sub
 
+        'Create a Lerp Percentage rather than calculate the percentage 4 times for each Color channel.
+        Dim fColorPercentage As Single = fLifetime / fLifetimeMax
+        cDrawColor.R = GameMath.Lerp(cColorTarget.R / 2 + 0.5F, cColorTarget.R, fColorPercentage)
+        cDrawColor.G = GameMath.Lerp(cColorTarget.G / 2 + 0.5F, cColorTarget.G, fColorPercentage)
+        cDrawColor.B = GameMath.Lerp(cColorTarget.B / 2 + 0.5F, cColorTarget.B, fColorPercentage)
+        cDrawColor.A = GameMath.Lerp(1.0F, cColorTarget.A, fColorPercentage)
+    End Sub
     Public Overrides Sub Draw(ByVal gGameTime As GameTime, ByVal gViewport As Viewport)
         GL.Color4(cDrawColor)
         'GL.BlendFunc(BlendingFactorSrc.Src1Color, BlendingFactorDest.OneMinusSrcColor)
         For i As Integer = 0 To vParticleMovement.Length - 1
-            Draw2dRotated(gViewport, iTextureIdentification(0), vPositions(i), New Vector2(18, 1), vParticleMovement(i).Rotation)
+            Draw2dRotated(gViewport, iTextureIdentification(0), vPositions(i), vDrawSize, vParticleMovement(i).Rotation)
         Next
-        GL.Color4(1.0F, 1.0F, 1.0F, 1.0F)
     End Sub
 End Class

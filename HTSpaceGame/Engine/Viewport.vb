@@ -5,7 +5,7 @@ Imports OpenTK.Graphics
 Imports OpenTK.Graphics.OpenGL
 
 'Usng the Isitope Visual Basic Namespace
-Namespace IsotopeVB
+Namespace Isotope
 
     Public Class Viewport
         'This class will Inherit the GameWindow class "OpenTK.GameWindow"

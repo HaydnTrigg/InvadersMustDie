@@ -1,6 +1,8 @@
 ﻿Imports System.Collections.Generic
 Imports OpenTK
-Namespace IsotopeVB.Quadtree
+Imports HTSpaceGame.Isotope
+
+Namespace Isotope.Quadtree
     Public Class QuadTree(Of T)
         Public Loc As Vector2
         Public Item As T
@@ -62,7 +64,7 @@ Namespace IsotopeVB.Quadtree
         Public Function GetWithin(ByVal target As Vector2, ByVal d As Double, ByVal ret As List(Of T)) As List(Of T)
             Dim dsquared As Double = d * d
             ' First, we check and see if the current item is in range
-            If GameMath.Vector2DistanceSquared(Loc, target) < dsquared Then
+            If VectorMath.Vector2DistanceSquared(Loc, target) < dsquared Then
                 ret.Add(Item)
             End If
 

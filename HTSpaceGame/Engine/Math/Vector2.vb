@@ -90,12 +90,19 @@ Public Class Vector2
         Y *= val
     End Sub
 
-    'Turn the vector into a rotation in radians
+    'Calculated a Rotation from a Normalized Vector2, in Radians
     Public Function Rotation() As Single
         'Calculate the rotation and cast to single precision
         Rotation = CType(Math.Atan2(Y, -X), Single)
     End Function
 
+    'Normalizes the Vector2
+    Public Function NormalizeVector2(ByVal vector As Vector2) As Vector2
+        Dim val As Single = 1.0F / CSng(Math.Sqrt((vector.X * vector.X) + (vector.Y * vector.Y)))
+        Return New Vector2(vector.X * val,vector.Y * val)
+    End Function
+
+    'Produces a 
     Public Overrides Function ToString() As String
         Dim sb As New System.Text.StringBuilder(32)
         sb.Append("{X:")

@@ -9,14 +9,15 @@ Imports System.Windows.Forms
 Imports System.Drawing
 Imports System.Drawing.Imaging
 Imports System.Collections.Generic
+
 Imports OpenTK
 Imports OpenTK.Graphics
 Imports OpenTK.Graphics.OpenGL
 Imports OpenTK.Input
-Imports HTSpaceGame.IsotopeVB.GraphicsMath
-Imports System.Media
-Imports HTSpaceGame.IsotopeVB.Quadtree
 
+Imports HTSpaceGame.Isotope.Quadtree
+Imports HTSpaceGame.Isotope
+Imports HTSpaceGame.Isotope.GraphicsMath
 
 Namespace IsotopeVB
     Partial Public Class Game
@@ -29,16 +30,26 @@ Namespace IsotopeVB
             Game = 2
         End Enum
 
-        Enum ParticleLevel
+        Enum EffectLevel
             None = 0
             Low = 1
             Medium = 2
             High = 3
             Ultra = 4
-
         End Enum
+
+        Public cColors() As Color4 = New Color4() {
+            New Color4(1.0F, 0.0F, 0.0F, 1.0F),
+            New Color4(0.0F, 1.0F, 0.0F, 1.0F),
+            New Color4(0.0F, 0.5803922F, 1.0F, 1.0F),
+            New Color4(1.0F, 0.3529412F, 0.20784314F, 1.0F),
+            New Color4(255, 0.0F, 0.8627451F, 1.0F),
+            New Color4(0.698039234F, 0.0F, 1.0F, 1.0F),
+            New Color4(1.0F, 0.847058833F, 0.0F, 1.0F)
+        }
+
         Dim gGameState As GameState = GameState.Loading
-        Dim gParticleLevel As ParticleLevel = 1
+        Dim gEffectLevel As EffectLevel = 4
         Dim gPauseState As Boolean = False
 
         Dim gQuadTree As QuadTree(Of Integer)
@@ -96,13 +107,13 @@ Namespace IsotopeVB
 
 
             If GetKeyPress(Key.Number4) Then
-                gParticleLevel = ParticleLevel.None
+                gEffectLevel = EffectLevel.None
             End If
             If GetKeyPress(Key.Number5) Then
-                gParticleLevel = ParticleLevel.Low
+                gEffectLevel = EffectLevel.Low
             End If
             If GetKeyPress(Key.Number6) Then
-                gParticleLevel = ParticleLevel.Ultra
+                gEffectLevel = EffectLevel.Ultra
             End If
             If GetAsyncKeyState(Keys.Q) Then
                 createParticle(ParticleType.Firework)
@@ -226,7 +237,7 @@ Namespace IsotopeVB
                                     Dim CollisionIds() As Integer = gQuadTree.GetWithin(g.vPosition, 100).ToArray
                                     For i As Integer = 0 To CollisionIds.Length - 1
                                         If GameObjects(CollisionIds(i)).eEntity = GameObject.ObjectType.Enemy Then
-                                            If GameMath.Vector2Distance(GameObjects(CollisionIds(i)).vPosition, g.vPosition) < GameObjects(CollisionIds(i)).vSize.X - 10 Then
+                                            If VectorMath.Vector2Distance(GameObjects(CollisionIds(i)).vPosition, g.vPosition) < GameObjects(CollisionIds(i)).vSize.X - 10 Then
                                                 'Destroy the enemy and the bullet
                                                 For Each gg As GameObject In GameObjects.ToArray
                                                     createParticle(gg.vPosition, ParticleType.Firework)
@@ -242,7 +253,7 @@ Namespace IsotopeVB
                                     Dim CollisionIds() As Integer = gQuadTree.GetWithin(g.vPosition, g.vSize.X + g.vSize.Y).ToArray
                                     For i As Integer = 0 To CollisionIds.Length - 1
                                         If GameObjects(CollisionIds(CollisionIds(i))).eEntity = GameObject.ObjectType.Enemy Then
-                                            If GameMath.Vector2Distance(GameObjects(CollisionIds(i)).vPosition, g.vPosition) > 100 Then
+                                            If VectorMath.Vector2Distance(GameObjects(CollisionIds(i)).vPosition, g.vPosition) > 100 Then
                                                 'Destroy the enemy and the bullet
                                                 Console.WriteLine("Enemy go boom")
                                                 'GameObjects.Clear()
@@ -263,7 +274,7 @@ Namespace IsotopeVB
                     While fTimer > f
                         createParticle(ParticleType.Menu)
 
-                        'GameObjects.Add(New Explosion(New Vector2(500, 500), New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, gParticleLevel))
+                        'GameObjects.Add(New Explosion(New Vector2(500, 500), New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, gEffectLevel))
 
                         fTimer -= f
                     End While
@@ -305,21 +316,21 @@ Namespace IsotopeVB
         'This is a function called from the Update Thread of the Particle Update thread to iterate through all of the particles.
         'If this is run from the (updateThreadParticle) then the particle count is allowed to be between Off-Ultra else its manually set between Off-Low
         Private Sub gUpdateEffects(ByVal gGameTime As GameTime)
-#If Not DEBUG Then
             try
-#End If
             'Iterate through all the games objects [Particles]
-            For Each g As GameObject In gParticles.ToArray
-                g.Update(gGameTime, gRandom, gViewport.ViewportPosition)
-                If g.fLifetime >= g.fLifetimeMax Then
-                    gParticles.Remove(g)
-                End If
-            Next
-#If Not DEBUG Then
+                For Each g As GameObject In gParticles.ToArray
+                    If Not g.Equals(Nothing) Or g.Equals(vbNull) Then
+
+
+                        g.Update(gGameTime, gRandom, gViewport.ViewportPosition)
+                        If g.fLifetime >= g.fLifetimeMax Then
+                            gParticles.Remove(g)
+                        End If
+                    End If
+                Next
             Catch ex As Exception
             Console.WriteLine(ex.Message)
             End Try
-#End If
         End Sub
 
         'The primary draw function
@@ -350,19 +361,18 @@ Namespace IsotopeVB
 
                     'Draw the game
                     'Iterate through all the games objects [Entity]
-                        For Each g As GameObject In GameObjects.ToArray
-                            'Select the type of object and do the appropriate update for it
-                            g.Draw(gGameTime, gViewport)
-                        Next
+                    For Each g As GameObject In GameObjects.ToArray
+                        'Select the type of object and do the appropriate update for it
+                        g.Draw(gGameTime, gViewport)
+                    Next
 
-                        'Draw the hud
-                        Draw2d(gViewport, gTextures(4).ID, gTextures(4).Size / -2 + gViewport.MousePosition, gTextures(4).Size)
+                    'Draw the hud
+                    Draw2d(gViewport, gTextures(4).ID, gTextures(4).Size / -2 + gViewport.MousePosition, gTextures(4).Size)
 
                 Case GameState.Loading
-                        'Nothing
+                    'Nothing
 
             End Select
-
 
             'Iterate through all the games objects [Particles]
             For Each g As GameObject In gParticles.ToArray
@@ -370,17 +380,15 @@ Namespace IsotopeVB
                 If Not g.Equals(Nothing) Or g.Equals(vbNull) Then
                     g.Draw(gGameTime, gViewport)
                 End If
-
             Next
-
+            'After drawing all of the particles reset the Drawing Color to White
+            GL.Color4(1.0F, 1.0F, 1.0F, 1.0F)
 
             'Overdraw the device with a 1x1 Pixel. Useful for reducing artifacts on the last draw call.
             Draw2d(gViewport, gTextures(6).ID, New Vector2(Single.MaxValue, Single.MaxValue), New Vector2(1, 1))
-
         End Sub
 
-        Dim font As New Font(FontFamily.GenericSansSerif, 8.0F)
-
+        'Spawns the Player is the client has died or is beginning the game.
         Public Sub SpawnPlayer()
             If Not GameObjects.Count = 0 Then
                 GameObjects(0) = New PlayerShip(New Vector2(500, 500), New Vector2(48, 48), New Integer() {gTextures(1).ID})
@@ -446,26 +454,28 @@ Namespace IsotopeVB
                     If bEffectThread Then
                         'If running from the bParticleThread
                         'Create a new Explosion Particle with whatever settings are supplied
-                        gParticles.Add(New Explosion(_Position, New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, gParticleLevel))
+                        gParticles.Add(New Explosion(_Position, New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, gEffectLevel, ZeroColorAlpha(RandomColor4()), 2.0F))
                     Else
                         'If Not running from the bParticleThread
                         'Create a new Explosion Particle with whatever settings are supplied with the exception the maximum particles can only be on Low
-                        gParticles.Add(New Explosion(_Position, New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, GameMath.ClampI(gParticleLevel, 0, ParticleLevel.Low)))
+                        gParticles.Add(New Explosion(_Position, New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, GameMath.ClampI(gEffectLevel, 0, EffectLevel.Low), ZeroColorAlpha(RandomColor4()), 2.0F))
                     End If
                 Case ParticleType.PlayerExplosionFirework
-                    Dim e As New Explosion(_Position, New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, gParticleLevel * 20, New Color4(1.0F, 1.0F, 1.0F, 0))
-                    e.fLifetimeMax = 5
-                    gParticles.Add(e)
+                    gParticles.Add(New Explosion(_Position, New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, gEffectLevel * 20, New Color4(1.0F, 1.0F, 1.0F, 0.0F), 5.0F))
                 Case ParticleType.Nova
-                    Dim e As New Explosion(_Position, New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, gParticleLevel * 20)
-                    e.fLifetimeMax = 9
-                    gParticles.Add(e)
+                    gParticles.Add(New Explosion(_Position, New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, gEffectLevel * 20, ZeroColorAlpha(RandomColor4()), 9.0F))
                 Case ParticleType.Menu
-                    Dim e As New Explosion(_Position, New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, 0.0F * gParticleLevel)
-                    e.fLifetimeMax = 5
-                    gParticles.Add(e)
+                    gParticles.Add(New Explosion(_Position, New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, 0.0F * gEffectLevel, ZeroColorAlpha(RandomColor4()), 5.0F))
             End Select
         End Sub
+
+        Private Function RandomColor4() As Color4
+            Return cColors(GameMath.ClampI(gRandom.NextDouble() * cColors.Length - 1, 0, cColors.Length - 1))
+        End Function
+        Private Function ZeroColorAlpha(ByVal _Color As Color4) As Color4
+            _Color.A = 0
+            Return _Color
+        End Function
 
         Private Function GetKeyPress(ByVal _Key As Key) As Boolean
             If gCurrentKeyboardState.IsKeyDown(_Key) And Not gPreviousKeyboardState.IsKeyDown(_Key) Then

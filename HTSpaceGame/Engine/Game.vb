@@ -8,9 +8,9 @@
 
 'Visual Basic Isotope Framework port by Haydn Trigg
 'Written by: Haydn Trigg
-'Created : 5/2/2013
-'Modified: 5/8/2013
-'Version : 0.7.1
+'Created : 2/5/2013 [dd/mm/yyyy]
+'Modified: 15/5/2013 [dd/mm/yyyy]
+'Version : 0.20.1
 'This is the primary backbone framework for the engine.
 
 Imports System.Threading
@@ -19,7 +19,7 @@ Imports OpenTK
 Imports OpenTK.Graphics
 Imports OpenTK.Graphics.OpenGL
 Imports HTSpaceGame.IsotopeVB.GraphicsMath
-
+Imports HTSpaceGame.Isotope
 #Const DEBUGNOTIFY = False
 
 Namespace IsotopeVB
@@ -157,7 +157,7 @@ Namespace IsotopeVB
                 Console.WriteLine("UpdateEffects(" + gGameTime.TotalGameTime.ToString() + ") Finished")
 #End If
 
-                Thread.Sleep(GameMath.Clamp(_UPDATETIME - ((System.Diagnostics.Stopwatch.GetTimestamp - _STARTEFFECTTIME) / 1000), 0, _UPDATETIME))
+                Thread.Sleep(GameMath.ClampD(_UPDATETIME - ((System.Diagnostics.Stopwatch.GetTimestamp - _STARTEFFECTTIME) / 1000), 0, _UPDATETIME))
 #If Not DEBUG Then
             Catch ex As Exception
                 Console.WriteLine(ex.Message)
@@ -204,7 +204,7 @@ Namespace IsotopeVB
 #If DEBUG And DEBUGNOTIFY Then
                 Console.WriteLine("Update(" + gGameTime.TotalGameTime.ToString() + ") Finished")
 #End If
-                Thread.Sleep(GameMath.Clamp(_UPDATETIME - ((System.Diagnostics.Stopwatch.GetTimestamp - _STARTUPDATETIME) / 1000), 0, _UPDATETIME))
+                Thread.Sleep(GameMath.ClampD(_UPDATETIME - ((System.Diagnostics.Stopwatch.GetTimestamp - _STARTUPDATETIME) / 1000), 0, _UPDATETIME))
 #If Not DEBUG Then
             Catch ex As Exception
                 Console.WriteLine(ex.Message)
