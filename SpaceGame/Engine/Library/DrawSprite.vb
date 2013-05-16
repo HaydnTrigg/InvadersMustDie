@@ -26,35 +26,20 @@ Namespace Isotope.Library
             GL.End()
         End Sub
 
-        Public Shared Sub Draw2DOnscreen(ByVal _Viewport As Viewport, ByVal _TextureID As Integer, ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Center As Boolean)
-            Dim v As Vector2 = _Size
-            v /= _Viewport.ViewportScale
-
-            'Assign's the current texture to the graphics device.
-            GL.BindTexture(TextureTarget.Texture2D, _TextureID)
+        Public Shared Sub DrawBackbuffer(ByVal _Position As Vector2, ByVal _Size As Vector2)
             'Begins drawing Quads
             GL.Begin(BeginMode.Quads)
-            If _Center Then
-                'Creates a quad with some properties
-                GL.TexCoord2(0.0F, 0.0F)
-                GL.Vertex2(_Position.X - _Size.X / 2.0F, _Position.Y - _Size.Y / 2.0F)
-                GL.TexCoord2(1.0F, 0.0F)
-                GL.Vertex2(_Position.X + _Size.X / 2.0F, _Position.Y - _Size.Y / 2.0F)
-                GL.TexCoord2(1.0F, 1.0F)
-                GL.Vertex2(_Position.X + _Size.X / 2.0F, _Position.Y + _Size.Y / 2.0F)
-                GL.TexCoord2(0.0F, 1.0F)
-                GL.Vertex2(_Position.X - _Size.X / 2.0F, _Position.Y + _Size.Y / 2.0F)
-            Else
-                'Creates a quad with some properties
-                GL.TexCoord2(0.0F, 0.0F)
-                GL.Vertex2(_Position.X, _Position.Y)
-                GL.TexCoord2(1.0F, 0.0F)
-                GL.Vertex2(_Position.X + _Size.X, _Position.Y)
-                GL.TexCoord2(1.0F, 1.0F)
-                GL.Vertex2(_Position.X + _Size.X, _Position.Y + _Size.Y)
-                GL.TexCoord2(0.0F, 1.0F)
-                GL.Vertex2(_Position.X, _Position.Y + _Size.Y)
-            End If
+
+            'Creates a quad with some properties
+            GL.TexCoord2(0.0F, 0.0F)
+            GL.Vertex2(_Position.X, _Position.Y)
+            GL.TexCoord2(1.0F, 0.0F)
+            GL.Vertex2(_Position.X + _Size.X, _Position.Y)
+            GL.TexCoord2(1.0F, 1.0F)
+            GL.Vertex2(_Position.X + _Size.X, _Position.Y + _Size.Y)
+            GL.TexCoord2(0.0F, 1.0F)
+            GL.Vertex2(_Position.X, _Position.Y + _Size.Y)
+
             'End drawing ready for another draw call.
             GL.End()
         End Sub

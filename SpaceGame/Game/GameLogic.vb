@@ -101,16 +101,12 @@ Namespace Isotope
 
         'Controlls how fast the player can shoot. 8[1/3] times per second
         Dim fRefire As Single
-        Dim fRefireTime As Single = 0.5F
+        Dim fRefireTime As Single = 0.12F
 
         'Controlls how long the intro goes for
-        Dim fIntroFadeIn As Single = 0.0F
-        Dim fIntroFadeOut As Single = 0.0F
-        Dim fIntroTotalTime As Single = 0.0F
-
-        'Menu Buttons
-        Dim btnStartGame As MenuButton
-        Dim btnExitGame As MenuButton
+        Dim fIntroFadeIn As Single = 3.0F
+        Dim fIntroFadeOut As Single = 3.0F
+        Dim fIntroTotalTime As Single = 10.0F
 
 #End Region
 #Region "Main Functions"
@@ -118,7 +114,7 @@ Namespace Isotope
         Private Sub gLoadContent()
 
             gTextures.Add(LoadTexture("Content/Textures/Entity/Spinner/Spinner_PartB.png")) '0
-            gTextures.Add(LoadTexture("Content/Textures/Entity/Arrow/ship.png")) '1
+            gTextures.Add(LoadTexture("Content/Textures/Entity/Arrow\ship.png")) '1
             gTextures.Add(LoadTexture("Content/Textures/Misc/overlay.png")) '2
             gTextures.Add(LoadTexture("Content/Textures/Misc/background.png")) '3
             gTextures.Add(LoadTexture("Content/Textures/Misc/cursor.png")) '4
@@ -131,8 +127,6 @@ Namespace Isotope
             gTextures.Add(LoadTexture("Content/Textures/Entity/Revolver/Revolver_PartA.png")) '11
             gTextures.Add(LoadTexture("Content/Textures/Misc/Loading.png")) '12
             gTextures.Add(LoadTexture("Content/Textures/Entity/Bullet/Bullet_PartA.png")) '13
-            gTextures.Add(LoadTexture("Content/Textures/Misc/menustrip_play.png")) '14
-            gTextures.Add(LoadTexture("Content/Textures/Misc/menustrip_exit.png")) '14
 
             'gViewport.WindowBorder = WindowBorder.Fixed
 
@@ -154,8 +148,6 @@ Namespace Isotope
             gControllState.gPreviousMouseState = gPreviousMouseState
             gControllState.gPreviousMouseState = gPreviousMouseState
 
-            btnStartGame = New MenuButton(New Vector2(630.0F, 615.0F), gTextures(14).Size, New Integer() {gTextures(14).ID})
-            btnExitGame = New MenuButton(New Vector2(630.0F, 655.0F), gTextures(14).Size, New Integer() {gTextures(15).ID})
         End Sub
 
         Private Sub gUpdate(ByVal gGameTime As GameTime)
@@ -167,11 +159,11 @@ Namespace Isotope
             gControllState.gPreviousMouseState = gPreviousMouseState
             gControllState.gPreviousMouseState = gPreviousMouseState
             gControllState.gPreviousMouseState = gPreviousMouseState
-            gControllState.gViewport = gViewport
+
 
             'Update all of the KeyDown and KeyPress Events
             If GetKeyPress(Key.Number4) Then
-                gEffectLevel = GameMath.ClampInteger(gEffectLevel - 1, 1, EffectLevel.Ultra)
+                gEffectLevel = GameMath.ClampInteger(gEffectLevel - 1, 0, EffectLevel.Ultra)
             End If
             If GetKeyPress(Key.Number5) Then
                 gEffectLevel = GameMath.ClampInteger(gEffectLevel + 1, 0, EffectLevel.Ultra)
@@ -181,6 +173,9 @@ Namespace Isotope
             End If
             If GetKeyPress(Key.E) Then
                 createParticle(New Vector2(500, 500), ParticleType.Nova)
+            End If
+            If GetKeyPress(Key.R) Then
+                gGameState = GameState.Game
             End If
             If GetKeyPress(Key.H) Then
                 'Add 5 Spinners
@@ -196,7 +191,18 @@ Namespace Isotope
             'Determine how the game should update based on its current state
             Select Case gGameState
                 Case GameState.Game
+                    fRefire += gGameTime.DeltaTime
+                    If gCurrentMouseState.LeftButton Then
+                        Console.WriteLine("MOUSE GOOD")
+                        If fRefire > fRefireTime Then
+                            Console.WriteLine("TIME GOOD")
+                        End If
 
+                    End If
+                    If gCurrentMouseState.LeftButton And fRefire > fRefireTime Then
+                        gGameEntitys.Add(New Spinner(New Vector2(gRandom.NextDouble * 800 + 100, gRandom.NextDouble * 800 + 100), New Vector2(48, 48), gRandom, New Integer() {gTextures(0).ID, gTextures(5).ID}))
+                        fRefire -= fRefireTime
+                    End If
                     Dim b As Boolean
                     'Move the viewport to follow the first object(the player) and ensure that it wont fly of the screen to far.
                     If gGameEntitys.Count > 0 Then
@@ -219,11 +225,7 @@ Namespace Isotope
                                 gGameEntitys(0).bBoosting = False
                             End If
 
-                            fRefire += gGameTime.DeltaTime
-                            If gCurrentMouseState.LeftButton And fRefire > fRefireTime Then
-                                gGameEntitys.Add(New Bullet(gGameEntitys(0).vPosition, New Vector2(20.0F, 10.0F), gGameEntitys(0).vMovement, New Integer() {gTextures(13).ID}, New Color4(1.0F, 0.0F, 0.0F, 0.0F), 5.0F, GameObject.ParticleAlgorithm.Circle))
-                                fRefire -= fRefireTime
-                            End If
+
 
                         Else
                             b = True
@@ -277,8 +279,7 @@ Namespace Isotope
                         Next
                     Catch ex As Exception
 #If DEBUG Then
-                        Console.WriteLine("PROBLEM WITH QUADTREE COLLISIONS!!!")
-                        Console.WriteLine(ex.Message)
+                        Console.Write(ex.Message)
 #End If
                         gQuadTree = Nothing
                     End Try
@@ -293,11 +294,9 @@ Namespace Isotope
                                         For i As Integer = 0 To CollisionIds.Length - 1
                                             If gGameEntitys(CollisionIds(i)).eEntity = GameObject.ObjectType.Enemy Then
                                                 If GameMath.Vector2Distance(gGameEntitys(CollisionIds(i)).vPosition, g.vPosition) < gGameEntitys(CollisionIds(i)).vSize.X - 10 Then
-                                                    'Destroy all objects
+                                                    'Destroy the enemy and the bullet
                                                     For Each gg As GameObject In gGameEntitys.ToArray
-                                                        If Not gg.eEntity = GameObject.ObjectType.Bullet Then
-                                                            createParticle(gg.vPosition, ParticleType.Firework)
-                                                        End If
+                                                        createParticle(gg.vPosition, ParticleType.Firework)
                                                     Next
                                                     Dim v2 As Vector2 = g.vPosition
                                                     gGameEntitys.Clear()
@@ -307,17 +306,14 @@ Namespace Isotope
                                             End If
                                         Next
                                     Case GameObject.ObjectType.Bullet
-                                        Dim CollisionIds() As Integer = gQuadTree.GetWithin(g.vPosition, 100).ToArray
+                                        Dim CollisionIds() As Integer = gQuadTree.GetWithin(g.vPosition, g.vSize.X + g.vSize.Y).ToArray
                                         For i As Integer = 0 To CollisionIds.Length - 1
-                                            If gGameEntitys(CollisionIds(i)).eEntity = GameObject.ObjectType.Enemy Then
-                                                If GameMath.Vector2Distance(gGameEntitys(CollisionIds(i)).vPosition, g.vPosition) < gGameEntitys(CollisionIds(i)).vSize.X - 10 Then
+                                            If gGameEntitys(CollisionIds(CollisionIds(i))).eEntity = GameObject.ObjectType.Enemy Then
+                                                If GameMath.Vector2Distance(gGameEntitys(CollisionIds(i)).vPosition, g.vPosition) > 100 Then
                                                     'Destroy the enemy and the bullet
-                                                    createParticle(gGameEntitys(CollisionIds(i)).vPosition, ParticleType.PlayerExplosionFirework)
-                                                    createParticle(g.vPosition, ParticleType.PlayerExplosionFirework)
-
-                                                    gGameEntitys.Remove(g)
-                                                    gGameEntitys.RemoveAt(CollisionIds(i))
-
+                                                    Console.WriteLine("Enemy go boom")
+                                                    'gGameEntitys.Clear()
+                                                    'gGameState = GameState.Menu
                                                 End If
                                             End If
                                         Next
@@ -325,7 +321,7 @@ Namespace Isotope
                             Next
                         Catch ex As Exception
 #If DEBUG Then
-                            Console.WriteLine(ex.Message)
+                            Console.Write(ex.Message)
 #End If
                         End Try
                     End If
@@ -334,17 +330,17 @@ Namespace Isotope
                     'Set the Viewport to full screen.
                     gViewport.ViewportRealSize = New Vector2(1000, 1000)
                     'Center the Viewport
-                    gViewport.Position = New Vector2(500, 500) * gViewport.ViewportScale
+                    gViewport.Position = GameMath.Lerp(gViewport.Position, (New Vector2(500, 500) * gViewport.ViewportScale - New Vector2(gViewport.Width / 2, gViewport.Height / 2)) / gViewport.ViewportScale, gGameTime.DeltaTime * 2)
 
                     gGameEntitys.Clear()
 
                     'Spawning random fireworks
-                    Dim f As Single = 1.0F / 10.0F * gEffectLevel
+                    Dim f As Single = 1.0F / 5.0F * gEffectLevel
                     fEffectSpawn += gGameTime.DeltaTime
-                    While fEffectSpawn > f
+                    If fEffectSpawn > f Then
                         createParticle(ParticleType.Firework)
-                        fEffectSpawn -= f
-                    End While
+                        f = 0
+                    End If
 
                     'Iterate through all the games objects
                     For Each g As GameObject In gGameEntitys.ToArray
@@ -365,23 +361,6 @@ Namespace Isotope
                         gViewport.ViewportRealSize = New Vector2(gViewport.Width, gViewport.Height)
                     End If
             End Select
-
-            'Update the menu button
-            btnStartGame.gControllGameState = gControllState
-            btnStartGame.Update(gGameTime, gRandom, gViewport.MousePosition)
-            btnExitGame.gControllGameState = gControllState
-            btnExitGame.Update(gGameTime, gRandom, gViewport.MousePosition)
-
-            If gCurrentMouseState.LeftButton Then
-
-                If btnStartGame.bIsHovering Then
-                    gGameState = GameState.Game
-                End If
-                If btnExitGame.bIsHovering Then
-                    Exits()
-                End If
-
-            End If
         End Sub
 
 
@@ -399,9 +378,7 @@ Namespace Isotope
                     End If
                 Next
             Catch ex As Exception
-#If DEBUG Then
                 Console.WriteLine(ex.Message)
-#End If
             End Try
         End Sub
 
@@ -425,19 +402,13 @@ Namespace Isotope
                     Draw2D(gViewport, gTextures(4).ID, New Vector2(-12, -12) / gViewport.ViewportScale + gViewport.MousePosition, New Vector2(24, 24) / gViewport.ViewportScale)
 
                 Case GameState.Menu
-
-                    'Draw the background
-                    Draw2D(gViewport, gTextures(3).ID, gViewport.Position / 2 - New Vector2(1000, 1000), gTextures(3).Size * 1.5F)
-
                     'Draw the game
                     DrawParticles()
+                    'Draw the buttons
 
-                    'Draw logo
-                    Draw2D(gViewport, gTextures(6).ID, New Vector2(500.0F, 500.0F) - New Vector2(700.0F, 288.2353F) / 2, New Vector2(700.0F, 288.2353F))
-
-                    'Draw buttons
-                    btnStartGame.Draw(gGameTime, gViewport)
-                    btnExitGame.Draw(gGameTime, gViewport)
+                    'Draw the background
+                    Draw2D(gViewport, gTextures(6).ID, New Vector2(500, 600), gTextures(6).Size)
+                    'Draw2d(gViewport, gTextures(3).ID, gViewport.Position / 2 - New Vector2(1000, 1000), gTextures(3).Size * 2)
 
                     'Draw the hud
                     Draw2D(gViewport, gTextures(4).ID, New Vector2(-12, -12) / gViewport.ViewportScale + gViewport.MousePosition, New Vector2(24, 24) / gViewport.ViewportScale)
@@ -489,9 +460,6 @@ Namespace Isotope
                     g.Draw(gGameTime, gViewport)
                 Next
             Catch ex As Exception
-#If DEBUG Then
-                Console.WriteLine(ex.Message)
-#End If
             End Try
         End Sub
 
@@ -548,9 +516,9 @@ Namespace Isotope
         End Sub
 
         Private Sub createParticle(ByVal _Position As Vector2, ByVal _ParticleType As ParticleType, ByVal _Algorithm As Explosion.ParticleAlgorithm)
-            Select Case _ParticleType
+                Select Case _ParticleType
                 Case ParticleType.Firework
-                    If gGameEffects.Count < gEffectLevel * 25 Then
+                    If gGameEffects.Count < gEffectLevel * 10 Then
                         If bUsingEffectThread Then
                             'If running from the bParticleThread
                             'Create a new Explosion Particle with whatever settings are supplied
