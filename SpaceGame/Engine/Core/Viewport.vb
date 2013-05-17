@@ -9,7 +9,6 @@ Namespace Isotope
         'This class will Inherit the GameWindow class "OpenTK.GameWindow"
         Inherits GameWindow
 
-
 #Region "PublicField"
         Public Position As New Vector2(0, 0)
         Public ViewportRealSize As New Vector2(1600, 1600)

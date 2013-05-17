@@ -44,6 +44,8 @@ Namespace Isotope
         'The games Update Threads
         Dim gUpdateThread As Thread
         Dim gEffectThread As Thread
+
+        'Specifies if the game will use the EffectThread
         Dim bUsingEffectThread As Boolean
 
         'Initializes a generic Random number generation used throughout the game
@@ -89,7 +91,7 @@ Namespace Isotope
             gGameTime = getGameTime
 
             'Create the Viewport
-            gViewport = New Viewport(800, 800, "Game")
+            gViewport = New Viewport(640, 480, "Game")
 
             'Load the settings for the game.
             gViewport.VSync = OpenTK.VSyncMode.Adaptive
@@ -206,11 +208,6 @@ Namespace Isotope
         End Sub
 
         Private Sub Exits() Handles gViewport.Closing, gViewport.Closed, gViewport.Disposed
-            'End the gUpdateThread Thread
-            gUpdateThread.Abort()
-            'End the gEffectThread Thread
-            gEffectThread.Abort()
-            'End the application
             End
         End Sub
 

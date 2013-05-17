@@ -68,7 +68,7 @@ Public Class GameObject
     Public fBoostSpeedMax As Single
 
     'Specifies the vMovement normal of the object, [Normalized]
-    Public vMovement As New Vector2(1, 0)
+    Public vMovement As New Vector2(0, 0)
 
     'Specifies the objects current lifespan
     Public fLifespan As Single
@@ -131,16 +131,16 @@ Public Class PlayerShip
         eEntity = ObjectType.Player
 
         'Defines the Acceleration of the Object
-        fAcceleration = 75.0F
+        fAcceleration = 125.0F
 
         'Defines the extra boost acceleration of the Object
-        fAccelerationBoost = 25.0F
+        fAccelerationBoost = 50.0F
 
         'Defines the maximum normal speed
-        fSpeedMax = 250.0F
+        fSpeedMax = 350.0F
 
         'Defines the extra boost speed of the Object
-        fBoostSpeedMax = 100.0F
+        fBoostSpeedMax = 150.0F
     End Sub
 
 #End Region
@@ -291,42 +291,64 @@ Public Class Bullet
 #End Region
 #Region "Variables and Properties"
 
+    'The color of the particles
+    Dim cColorTarget As Color4
+
+    'The current drawing color of the particles.
+    Dim cDrawColor As Color4
+
 #End Region
 #Region "Initializers"
 
-    Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer)
+    Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Movement As Vector2, ByVal _TextureID() As Integer, ByVal _ColorTarget As Color4, ByVal _Lifespan As Single, ByVal _Algorithm As ParticleAlgorithm)
         MyBase.New(_Position, _Size, _TextureID)
 
-        'Set the Entity's acceleration to 150
-        fAcceleration = 150.0F
-        'Set the maximum speed of the Entity to 150
-        fSpeedMax = 80 + (_Random.NextDouble() * 80)
+        'Define the acceleration of the of the object
+        fSpeed = 500.0F
 
-        'Add extra code below
-        eEntity = ObjectType.Enemy
+        'Define the lifespan of the particle.
+        fLifespanMax = 5.0F
+
+        'Define the color of the particle.
+        cColorTarget = _ColorTarget
+
+        'Define the type of object as "Other"
+        eEntity = ObjectType.Bullet
+
+        'Define an algorithm to use with the particles.
+        eParticleAlgorithm = _Algorithm
+
+        'Assign the objects movement.
+        vMovement = _Movement
     End Sub
 
 #End Region
 #Region "Main Methods"
 
-    Public Overrides Sub Update(ByVal gGameTime As GameTime, ByVal gRandom As Random, ByVal _Target As Vector2)
-        'Accelerate the object and clamp its speed to the maximum.
-        fSpeed = GameMath.ClampFloat(fSpeed + fAcceleration * gGameTime.DeltaTime, 0, fSpeedMax)
+    Public Overrides Sub Update(ByVal gGameTime As GameTime, ByVal gRandom As System.Random, ByVal _Movement As Vector2)
 
-        'Smooth the vMovement using linear interpolation against a calculated normal specifying the direction of the target.
-        vMovement = GameMath.Lerp(vMovement, GameMath.NormalizeVector2(_Target - vPosition), gGameTime.DeltaTime)
+        vPosition += vMovement * 1500.0F * gGameTime.DeltaTime
+        fRotation = vMovement.Rotation
 
-        'Calculate and clamp the position.
-        vPosition = GameMath.ClampVector(vPosition + vMovement * gGameTime.DeltaTime * fSpeed, vSize / 2, New Vector2(1000.0F) - vSize / 2)
+        'Calculate the current color of the particle object.
+        cDrawColor.R = GameMath.Lerp(cColorTarget.R / 2 + 0.5F, cColorTarget.R, fLifespanPercentage)
+        cDrawColor.G = GameMath.Lerp(cColorTarget.G / 2 + 0.5F, cColorTarget.G, fLifespanPercentage)
+        cDrawColor.B = GameMath.Lerp(cColorTarget.B / 2 + 0.5F, cColorTarget.B, fLifespanPercentage)
+        cDrawColor.A = GameMath.Lerp(1.0F, cColorTarget.A, fLifespanPercentage)
 
-        'Spin the entity around and change it a little so it dosen't mimic every other entity.
-        fRotation += gGameTime.DeltaTime * (0.5F + gRandom.NextDouble()) * 3
+        'Add time to the particles current Lifespan.
+        fLifespan += gGameTime.DeltaTime
     End Sub
 
     Public Overrides Sub Draw(ByVal gGameTime As GameTime, ByVal gViewport As Viewport)
-        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, -fRotation * 2.0F)
-        Draw2dRotated(gViewport, iTextureIdentification(1), vPosition, vSize, fRotation * 1.5F)
-        Draw2dRotated(gViewport, iTextureIdentification(2), vPosition, vSize, 0)
+        'Draw the bullet with the specified color
+        GL.Color4(cDrawColor)
+
+        'Draw the object with rotation and a texture. Also rotate the texture 180 degrees.
+        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, fRotation + Math.PI)
+
+        'Reset the drawing color back to the default
+        GL.Color4(Color4.White)
     End Sub
 
 #End Region
@@ -356,7 +378,7 @@ Public Class Explosion
     Dim cDrawColor As Color4
 
     'The size the particles for drawing.
-    Dim vDrawSize As New Vector2(12.0F, 1.5F)
+    Dim vDrawSize As New Vector2(18.0F, 2.0F)
 
 #End Region
 #Region "Initializers"
@@ -443,3 +465,5 @@ Public Class Explosion
 
 #End Region
 End Class
+
+

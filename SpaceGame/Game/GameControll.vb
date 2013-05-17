@@ -1,5 +1,17 @@
-﻿Imports Isotope
+﻿#Region "Imports"
+
+'Import parts of the OpenTK Framework
+Imports OpenTK
+Imports OpenTK.Graphics
+Imports OpenTK.Graphics.OpenGL
 Imports OpenTK.Input
+
+'Import parts of the Isotope Framework
+Imports Isotope
+Imports Isotope.Library
+Imports Isotope.Library.DrawSprite
+
+#End Region
 
 Public Class GameControll
     Enum ControllType
@@ -12,8 +24,14 @@ Public Class GameControll
     Structure ControllGameState
         Public gPreviousKeyboardState, gCurrentKeyboardState As KeyboardState
         Public gPreviousMouseState, gCurrentMouseState As MouseState
+        Public gViewport As Viewport
     End Structure
     Public gControllGameState As ControllGameState
+
+    Public bIsHovering As Boolean
+
+    Public cDrawColor As Color4
+
 
     'Stores the position of the Object
     Public vPosition As Vector2
@@ -46,12 +64,31 @@ Public Class MenuButton
         MyBase.New(_Position, _Size, _TextureID)
         'Add extra code below
         eControllType = ControllType.Button
+        cDrawColor = Color4.White
     End Sub
 
     'Override Update statement.
     Public Overrides Sub Update(ByVal gGameTime As GameTime, ByVal gRandom As Random, ByVal _Target As Vector2)
+        bIsHovering = False
+        If CheckCollision(_Target, vPosition, vSize, gControllGameState.gViewport) Then
+            cDrawColor.A = GameMath.ClampFloat(cDrawColor.A + 1.0F * gGameTime.DeltaTime, 0.5F, 1.0F)
+bIsHovering = True
+        Else
+            cDrawColor.A = GameMath.ClampFloat(cDrawColor.A - 1.0F * gGameTime.DeltaTime, 0.5F, 1.0F)
+        End If
     End Sub
 
     Public Overrides Sub Draw(ByVal gGameTime As GameTime, ByVal gViewport As Viewport)
+        GL.Color4(cDrawColor)
+        Draw2D(gViewport, iTextureIdentification(0), vPosition - vSize / 2, vSize)
+        GL.Color4(Color4.White)
     End Sub
+
+    Public Function CheckCollision(ByVal _Point1 As Vector2, ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Viewport As Viewport) As Boolean
+        Dim objectrectangle As New System.Drawing.RectangleF(_Position.X - _Size.X / 2.0F, _Position.Y - _Size.Y / 2.0F, _Size.X, _Size.Y)
+        If objectrectangle.IntersectsWith(New System.Drawing.RectangleF(_Point1.X, _Point1.Y, 1.0F, 1.0F)) Then
+            Return True
+        End If
+        Return False
+    End Function
 End Class
