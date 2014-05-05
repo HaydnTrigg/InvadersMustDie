@@ -47,10 +47,10 @@ Public Class GameControll
     End Sub
 
     'The Overridable Update Function which is avaliable to all Controll's
-    Public Overridable Sub Update(ByVal gGameTime As GameTime, ByVal gRandom As Random, ByVal _Target As Vector2)
+    Public Overridable Sub Update(ByVal delta As Single, ByVal gRandom As Random, ByVal _Target As Vector2)
     End Sub
     'The Overridable Draw Function which is avaliable to all Controll's
-    Public Overridable Sub Draw(ByVal gGameTime As GameTime, ByVal gViewport As Viewport)
+    Public Overridable Sub Draw(ByVal delta As Single, ByVal gViewport As Viewport)
     End Sub
 
 End Class
@@ -68,17 +68,17 @@ Public Class MenuButton
     End Sub
 
     'Override Update statement.
-    Public Overrides Sub Update(ByVal gGameTime As GameTime, ByVal gRandom As Random, ByVal _Target As Vector2)
+    Public Overrides Sub Update(ByVal delta As Single, ByVal gRandom As Random, ByVal _Target As Vector2)
         bIsHovering = False
         If CheckCollision(_Target, vPosition, vSize, gControllGameState.gViewport) Then
-            cDrawColor.A = GameMath.ClampFloat(cDrawColor.A + 1.0F * gGameTime.DeltaTime, 0.5F, 1.0F)
-bIsHovering = True
+            cDrawColor.A = GameMath.ClampFloat(cDrawColor.A + 1.0F * delta, 0.5F, 1.0F)
+            bIsHovering = True
         Else
-            cDrawColor.A = GameMath.ClampFloat(cDrawColor.A - 1.0F * gGameTime.DeltaTime, 0.5F, 1.0F)
+            cDrawColor.A = GameMath.ClampFloat(cDrawColor.A - 1.0F * delta, 0.5F, 1.0F)
         End If
     End Sub
 
-    Public Overrides Sub Draw(ByVal gGameTime As GameTime, ByVal gViewport As Viewport)
+    Public Overrides Sub Draw(ByVal delta As Single, ByVal gViewport As Viewport)
         GL.Color4(cDrawColor)
         Draw2D(gViewport, iTextureIdentification(0), vPosition - vSize / 2, vSize)
         GL.Color4(Color4.White)

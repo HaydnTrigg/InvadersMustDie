@@ -46,7 +46,7 @@ Namespace Isotope
         End Sub
 
         'Updates the Viewport
-        Public Sub Update(ByVal gGameTime As GameTime)
+        Public Sub Update(ByVal delta As Single)
         End Sub
         Public Function ModS(ByVal _Single As Single) As Single
             If _Single < 0 Then

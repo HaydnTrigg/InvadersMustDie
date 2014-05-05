@@ -122,7 +122,7 @@ Namespace Isotope
                 _STARTEFFECTTIME = System.Diagnostics.Stopwatch.GetTimestamp
 
                 'Update the effects
-                gUpdateEffects(gGameTime)
+                gUpdateEffects(delta)
 
                 System.Diagnostics.Debug.WriteLine(gGameEntitys.Count)
                 'Sleep for the appropriate time taking into account the time it takes to process this loop
@@ -132,6 +132,10 @@ Namespace Isotope
         End Sub
 
         'The games update thread (TPS/UPS)
+        Dim updateAccumulator As New Single
+        Const updateTime As Single = 1.0 / 100.0
+        Const delta As Single = updateTime
+        Dim TotalTime As New Single
         Public Sub Update()
             'If the host computer has more then 2 virtual cores then enable the second thread.
             If _CoreCount >= 2 Then
@@ -143,33 +147,42 @@ Namespace Isotope
                 _STARTUPDATETIME = System.Diagnostics.Stopwatch.GetTimestamp
                 'Update the gametime ready for this update iteration
                 gGameTime = getGameTime
+                updateAccumulator += gGameTime.DeltaTime
 
-                'Update the Keyboard+Mouse State if the client is currently viewing the game
-                If gViewport.Focused Then
-                    gCurrentKeyboardState = OpenTK.Input.Keyboard.GetState()
-                    gCurrentMouseState = OpenTK.Input.Mouse.GetState()
-                End If
+                While (updateAccumulator > updateTime)
+                    updateAccumulator -= updateTime
+                    TotalTime += delta
 
-                'Update the GameLogic
-                gUpdate(gGameTime)
+                    'Update the Keyboard+Mouse State if the client is currently viewing the game
+                    If gViewport.Focused Then
+                        gCurrentKeyboardState = OpenTK.Input.Keyboard.GetState()
+                        gCurrentMouseState = OpenTK.Input.Mouse.GetState()
+                    End If
 
-                'If not using a thread for the effects, then update the effects using this thread.
-                If Not bUsingEffectThread Then
-                    gUpdateEffects(gGameTime)
-                End If
+                    'Update the GameLogic
+                    gUpdate(updateTime)
 
-                'Update the Keyboard+Mouse State
-                gPreviousMouseState = gCurrentMouseState
-                gPreviousKeyboardState = gCurrentKeyboardState
+                    'If not using a thread for the effects, then update the effects using this thread.
+                    If Not bUsingEffectThread Then
+                        gUpdateEffects(updateTime)
+                    End If
 
-                'Sleep for the appropriate time taking into account the time it takes to process this loop
-                Thread.Sleep(GameMath.ClampDouble(_UPDATETIME - ((System.Diagnostics.Stopwatch.GetTimestamp - _STARTUPDATETIME) / 1000), 1, _UPDATETIME))
+                    'Update the Keyboard+Mouse State
+                    gPreviousMouseState = gCurrentMouseState
+                    gPreviousKeyboardState = gCurrentKeyboardState
+
+                    'Sleep for the appropriate time taking into account the time it takes to process this loop
+                    Thread.Sleep(GameMath.ClampDouble(_UPDATETIME - ((System.Diagnostics.Stopwatch.GetTimestamp - _STARTUPDATETIME) / 1000), 1, _UPDATETIME))
+
+                End While
             End While
             Exits()
         End Sub
 
 
         'The games draw thread (FPS) [Main Thread]
+        Dim drawAccumulator As New Single
+        Dim drawTime As New Single
         Public Sub Draw() Handles gViewport.RenderFrame
             If (gViewport.IsExiting) Then
                 Exits()

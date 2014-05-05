@@ -162,9 +162,9 @@ Namespace Isotope
             btnExitGame = New MenuButton(New Vector2(630.0F, 655.0F), gTextures(14).Size, New Integer() {gTextures(15).ID})
         End Sub
 
-        Private Sub gUpdate(ByVal gGameTime As GameTime)
+        Private Sub gUpdate(ByVal delta As Single)
             'Update the Viewport
-            gViewport.Update(gGameTime)
+            gViewport.Update(delta)
 
             'Update the ControllState
             gControllState.gPreviousKeyboardState = gPreviousKeyboardState
@@ -207,7 +207,7 @@ Namespace Isotope
                             gViewport.Position = (gGameEntitys(0).vPosition * gViewport.ViewportScale - New Vector2(gViewport.Width / 2, gViewport.Height / 2)) / gViewport.ViewportScale
 
                             'Increment the players spawn time counter
-                            pSpawnTime += gGameTime.DeltaTime
+                            pSpawnTime += delta
 
                             'Run all player code below!!!
 
@@ -226,7 +226,7 @@ Namespace Isotope
                             End If
 
                             'Increment the refire counter
-                            fRefire += gGameTime.DeltaTime
+                            fRefire += delta
                             'Is the client asking to fire, is the player allowes to shoot yet?
                             If gCurrentMouseState.LeftButton And fRefire > fRefireTime Then
                                 gGameEntitys.Add(New Bullet(gGameEntitys(0).vPosition, New Vector2(40.0F, 20.0F), gGameEntitys(0), New Integer() {gTextures(13).ID}, New Color4(1.0F, 0.66666F, 0.2F, 0.0F), 5.0F, GameObject.ParticleAlgorithm.Circle))
@@ -234,7 +234,7 @@ Namespace Isotope
                             End If
 
                             'Increment the enemy spawn counter.
-                            fEnemySpawn += gGameTime.DeltaTime
+                            fEnemySpawn += delta
                             'If the player is alive and its time to spawn some enemies, spawn some enemies.
                             If fEnemySpawn > fEnemySpawnTime Then
                                 'Add 5 Spinners
@@ -267,13 +267,13 @@ Namespace Isotope
                             'Clear all of the enemys
                             gGameEntitys.Clear()
                             'Center the viewport's position
-                            gViewport.Position = GameMath.Lerp(gViewport.Position, (New Vector2(500, 500) * gViewport.ViewportScale - New Vector2(gViewport.Width / 2, gViewport.Height / 2)) / gViewport.ViewportScale, gGameTime.DeltaTime * 2)
+                            gViewport.Position = GameMath.Lerp(gViewport.Position, (New Vector2(500, 500) * gViewport.ViewportScale - New Vector2(gViewport.Width / 2, gViewport.Height / 2)) / gViewport.ViewportScale, delta * 2)
 
                             'Something else or dead
                             If pSpawnTime > pSpawnTimeMax Then
                                 pSpawnTime = 0.0F
                             End If
-                            pSpawnTime -= gGameTime.DeltaTime
+                            pSpawnTime -= delta
                             If pSpawnTime < -3 Then
                                 SpawnPlayer()
                                 fEnemySpawn = 5.0F
@@ -284,12 +284,12 @@ Namespace Isotope
                     End If
                     If b Then
                         gGameEntitys.Clear()
-                        gViewport.Position = GameMath.Lerp(gViewport.Position, (New Vector2(500, 500) * gViewport.ViewportScale - New Vector2(gViewport.Width / 2, gViewport.Height / 2)) / gViewport.ViewportScale, gGameTime.DeltaTime * 2)
+                        gViewport.Position = GameMath.Lerp(gViewport.Position, (New Vector2(500, 500) * gViewport.ViewportScale - New Vector2(gViewport.Width / 2, gViewport.Height / 2)) / gViewport.ViewportScale, delta * 2)
                         'Something else or dead
                         If pSpawnTime > pSpawnTimeMax Then
                             pSpawnTimeMax = pSpawnTime
                         End If
-                        pSpawnTime -= gGameTime.DeltaTime
+                        pSpawnTime -= delta
                         If pSpawnTime < -3 Then
                             SpawnPlayer()
                             pSpawnTime = 0.0F
@@ -305,10 +305,10 @@ Namespace Isotope
                         For i As Integer = 0 To gGameEntitys.Count - 1
                             Dim g As GameObject = gGameObjectsTemp_1(i)
                             If g.eEntity.Equals(GameObject.ObjectType.Player) Then
-                                g.Update(gGameTime, gRandom, gViewport.MousePosition)
+                                g.Update(delta, gRandom, gViewport.MousePosition)
 
                             Else
-                                g.Update(gGameTime, gRandom, gGameEntitys(0).vPosition)
+                                g.Update(delta, gRandom, gGameEntitys(0).vPosition)
                             End If
                             If g.fLifespan >= g.fLifespanMax Then
                                 gGameEntitys.Remove(g)
@@ -384,7 +384,7 @@ Namespace Isotope
 
                     'Spawning random fireworks
                     Dim f As Single = 1.0F / 10.0F * gEffectLevel
-                    fEffectSpawn += gGameTime.DeltaTime
+                    fEffectSpawn += delta
                     While fEffectSpawn > f
                         createParticle(ParticleType.Firework)
                         fEffectSpawn -= f
@@ -392,7 +392,7 @@ Namespace Isotope
 
                     'Iterate through all the games objects
                     For Each g As GameObject In gGameEntitys.ToArray
-                        g.Update(gGameTime, gRandom, gViewport.Position)
+                        g.Update(delta, gRandom, gViewport.Position)
                         If g.fLifespan >= g.fLifespanMax Then
                             gGameEntitys.Remove(g)
                         End If
@@ -403,9 +403,9 @@ Namespace Isotope
 
                     'Update the menu button
                     btnStartGame.gControllGameState = gControllState
-                    btnStartGame.Update(gGameTime, gRandom, gViewport.MousePosition)
+                    btnStartGame.Update(delta, gRandom, gViewport.MousePosition)
                     btnExitGame.gControllGameState = gControllState
-                    btnExitGame.Update(gGameTime, gRandom, gViewport.MousePosition)
+                    btnExitGame.Update(delta, gRandom, gViewport.MousePosition)
 
                     If gCurrentMouseState.LeftButton Then
 
@@ -419,10 +419,10 @@ Namespace Isotope
                     End If
 
                 Case GameState.Loading
-                    If gGameTime.TotalTime > fIntroTotalTime + 0.5F Then
+                    If TotalTime > fIntroTotalTime + 0.5F Then
                         gGameState = GameState.Menu
                     Else
-                        gViewport.Position = GameMath.Lerp(gViewport.Position, (New Vector2(500, 500) * gViewport.ViewportScale - New Vector2(gViewport.Width / 2, gViewport.Height / 2)) / gViewport.ViewportScale, gGameTime.DeltaTime * 2)
+                        gViewport.Position = GameMath.Lerp(gViewport.Position, (New Vector2(500, 500) * gViewport.ViewportScale - New Vector2(gViewport.Width / 2, gViewport.Height / 2)) / gViewport.ViewportScale, delta * 2)
                         gViewport.ViewportRealSize = New Vector2(gViewport.Width, gViewport.Height)
                     End If
             End Select
@@ -431,12 +431,12 @@ Namespace Isotope
 
         'This is a function called from the Update Thread of the Particle Update thread to iterate through all of the particles.
         'If this is run from the (updateThreadParticle) then the particle count is allowed to be between Off-Ultra else its manually set between Off-Low
-        Private Sub gUpdateEffects(ByVal gGameTime As GameTime)
+        Private Sub gUpdateEffects(ByVal delta As Single)
             Try
                 'Iterate through all the games objects [Particles]
                 For Each g As GameObject In gGameEffects.ToArray
                     If Not g.Equals(Nothing) Or g.Equals(vbNull) Then
-                        g.Update(gGameTime, gRandom, gViewport.Position)
+                        g.Update(delta, gRandom, gViewport.Position)
                         If g.fLifespan >= g.fLifespanMax Then
                             gGameEffects.Remove(g)
                         End If
@@ -480,18 +480,18 @@ Namespace Isotope
                     Draw2D(gViewport, gTextures(6).ID, New Vector2(500.0F, 500.0F) - New Vector2(700.0F, 288.2353F) / 2, New Vector2(700.0F, 288.2353F))
 
                     'Draw buttons
-                    btnStartGame.Draw(gGameTime, gViewport)
-                    btnExitGame.Draw(gGameTime, gViewport)
+                    btnStartGame.Draw(delta, gViewport)
+                    btnExitGame.Draw(delta, gViewport)
 
                     'Draw the hud
                     Draw2D(gViewport, gTextures(4).ID, New Vector2(-12, -12) / gViewport.ViewportScale + gViewport.MousePosition, New Vector2(24, 24) / gViewport.ViewportScale)
 
                 Case GameState.Loading
                     'Draw Intro Screen
-                    If gGameTime.TotalTime > fIntroTotalTime - fIntroFadeIn Then
-                        GL.Color4(New Color4(1.0F, 1.0F, 1.0F, 1.0F - CType((gGameTime.TotalTime - (fIntroTotalTime - fIntroFadeIn)) / fIntroFadeOut, Single)))
+                    If TotalTime > fIntroTotalTime - fIntroFadeIn Then
+                        GL.Color4(New Color4(1.0F, 1.0F, 1.0F, 1.0F - CType((TotalTime - (fIntroTotalTime - fIntroFadeIn)) / fIntroFadeOut, Single)))
                     Else
-                        GL.Color4(New Color4(1.0F, 1.0F, 1.0F, CType(gGameTime.TotalTime / fIntroFadeIn, Single) - 1.0F))
+                        GL.Color4(New Color4(1.0F, 1.0F, 1.0F, CType(TotalTime / fIntroFadeIn, Single) - 1.0F))
                     End If
                     'Fill the playing area with image.
                     Draw2D(gViewport, gTextures(12).ID, New Vector2(0, 0), New Vector2(1000, 1000))
@@ -512,7 +512,7 @@ Namespace Isotope
                 For Each g As GameObject In gGameEffects.ToArray
                     'Select the type of object and do the appropriate update for it
                     If Not g.Equals(Nothing) Or g.Equals(vbNull) Then
-                        g.Draw(gGameTime, gViewport)
+                        g.Draw(delta, gViewport)
                     End If
                 Next
             Catch ex As Exception
@@ -530,7 +530,7 @@ Namespace Isotope
             Try
                 For Each g As GameObject In gGameEntitys.ToArray
                     'Select the type of object and do the appropriate update for it
-                    g.Draw(gGameTime, gViewport)
+                    g.Draw(delta, gViewport)
                 Next
             Catch ex As Exception
 #If DEBUG Then
