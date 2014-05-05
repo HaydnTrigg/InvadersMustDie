@@ -11,8 +11,8 @@
 #Region "Initializers"
 
         Public Sub New(ByVal TimeSpanTotal As TimeSpan, ByVal TimeSpanElapsed As TimeSpan)
-            TotalTime = TimeSpanTotal.TotalSeconds
-            DeltaTime = TimeSpanElapsed.TotalSeconds
+            TotalTime = TimeSpanTotal.TotalSeconds / 1
+            DeltaTime = TimeSpanElapsed.TotalSeconds / 1
         End Sub
 
 #End Region

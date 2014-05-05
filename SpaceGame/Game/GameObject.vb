@@ -180,7 +180,9 @@ Public Class PlayerShip
     End Sub
 
     Public Overrides Sub Draw(ByVal gGameTime As GameTime, ByVal gViewport As Viewport)
+        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One) 'Use additive blending with transparency
         Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, fRotation)
+        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha) 'Use linear transparency blending [default]
     End Sub
 #End Region
 End Class
@@ -227,8 +229,10 @@ Public Class Spinner
     End Sub
 
     Public Overrides Sub Draw(ByVal gGameTime As GameTime, ByVal gViewport As Viewport)
+        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One) 'Use additive blending with transparency
         Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, fRotation)
         Draw2dRotated(gViewport, iTextureIdentification(1), vPosition, vSize, 0)
+        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha) 'Use linear transparency blending [default]
     End Sub
 
 #End Region
@@ -275,9 +279,11 @@ Public Class Revolver
     End Sub
 
     Public Overrides Sub Draw(ByVal gGameTime As GameTime, ByVal gViewport As Viewport)
+        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One) 'Use additive blending with transparency
         Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, -fRotation * 2.0F)
         Draw2dRotated(gViewport, iTextureIdentification(1), vPosition, vSize, fRotation * 1.5F)
         Draw2dRotated(gViewport, iTextureIdentification(2), vPosition, vSize, 0)
+        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha) 'Use linear transparency blending [default]
     End Sub
 
 #End Region
@@ -300,11 +306,11 @@ Public Class Bullet
 #End Region
 #Region "Initializers"
 
-    Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Movement As Vector2, ByVal _TextureID() As Integer, ByVal _ColorTarget As Color4, ByVal _Lifespan As Single, ByVal _Algorithm As ParticleAlgorithm)
+    Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Parent As PlayerShip, ByVal _TextureID() As Integer, ByVal _ColorTarget As Color4, ByVal _Lifespan As Single, ByVal _Algorithm As ParticleAlgorithm)
         MyBase.New(_Position, _Size, _TextureID)
 
         'Define the acceleration of the of the object
-        fSpeed = 500.0F
+        fSpeed = 500.0F + _Parent.fSpeed
 
         'Define the lifespan of the particle.
         fLifespanMax = 5.0F
@@ -319,7 +325,7 @@ Public Class Bullet
         eParticleAlgorithm = _Algorithm
 
         'Assign the objects movement.
-        vMovement = _Movement
+        vMovement = GameMath.NormalizeVector2(_Parent.vMovement)
     End Sub
 
 #End Region
@@ -341,14 +347,18 @@ Public Class Bullet
     End Sub
 
     Public Overrides Sub Draw(ByVal gGameTime As GameTime, ByVal gViewport As Viewport)
+        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One) 'Use additive blending with transparency
         'Draw the bullet with the specified color
         GL.Color4(cDrawColor)
+
+        'GL.BlendFunc(BlendingFactorSrc.OneMinusDstColor, BlendingFactorDest.OneMinusDstAlpha)
 
         'Draw the object with rotation and a texture. Also rotate the texture 180 degrees.
         Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, fRotation + Math.PI)
 
         'Reset the drawing color back to the default
         GL.Color4(Color4.White)
+        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha) 'Use linear transparency blending [default]
     End Sub
 
 #End Region
@@ -444,9 +454,9 @@ Public Class Explosion
         Next
 
         'Calculate the current color of the particle object.
-        cDrawColor.R = GameMath.Lerp(cColorTarget.R / 2 + 0.5F, cColorTarget.R, fLifespanPercentage)
-        cDrawColor.G = GameMath.Lerp(cColorTarget.G / 2 + 0.5F, cColorTarget.G, fLifespanPercentage)
-        cDrawColor.B = GameMath.Lerp(cColorTarget.B / 2 + 0.5F, cColorTarget.B, fLifespanPercentage)
+        cDrawColor.R = GameMath.ClampFloat(GameMath.Lerp((cColorTarget.R / 2 + 0.5F) * 2.0F, cColorTarget.R * 2.0F, fLifespanPercentage), 0, 1)
+        cDrawColor.G = GameMath.ClampFloat(GameMath.Lerp((cColorTarget.G / 2 + 0.5F) * 2.0F, cColorTarget.G * 2.0F, fLifespanPercentage), 0, 1)
+        cDrawColor.B = GameMath.ClampFloat(GameMath.Lerp((cColorTarget.B / 2 + 0.5F) * 2.0F, cColorTarget.B * 2.0F, fLifespanPercentage), 0, 1)
         cDrawColor.A = GameMath.Lerp(1.0F, cColorTarget.A, fLifespanPercentage)
 
         'Add time to the particles current Lifespan.
@@ -456,11 +466,12 @@ Public Class Explosion
     Public Overrides Sub Draw(ByVal gGameTime As GameTime, ByVal gViewport As Viewport)
         'Draw anything with the specified drawing color
         GL.Color4(cDrawColor)
-
+        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One) 'Use additive blending with transparency
         'Iterate through all of the particles and draw them.
         For i As Integer = 0 To vParticleMovement.Length - 1
             Draw2dRotated(gViewport, iTextureIdentification(0), vPositions(i), vDrawSize, vParticleMovement(i).Rotation)
         Next
+        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha) 'Use linear transparency blending [default]
     End Sub
 
 #End Region

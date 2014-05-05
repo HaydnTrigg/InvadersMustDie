@@ -124,6 +124,7 @@ Namespace Isotope
                 'Update the effects
                 gUpdateEffects(gGameTime)
 
+                System.Diagnostics.Debug.WriteLine(gGameEntitys.Count)
                 'Sleep for the appropriate time taking into account the time it takes to process this loop
                 Thread.Sleep(GameMath.ClampDouble(_UPDATETIME - ((System.Diagnostics.Stopwatch.GetTimestamp - _STARTEFFECTTIME) / 1000), 1, _UPDATETIME))
             End While

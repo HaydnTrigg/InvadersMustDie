@@ -74,7 +74,7 @@ Namespace Isotope
         Dim gGameState As GameState = GameState.Menu
 
         'The current Level of Effects
-        Dim gEffectLevel As EffectLevel = 1
+        Dim gEffectLevel As EffectLevel = 4
 
         'The games QuadTree
         Dim gQuadTree As QuadTree(Of Integer)
@@ -108,9 +108,9 @@ Namespace Isotope
         Dim fEnemySpawnTime As Single = 7.0F
 
         'Controlls how long the intro goes for
-        Dim fIntroFadeIn As Single = 0.0F
-        Dim fIntroFadeOut As Single = 0.0F
-        Dim fIntroTotalTime As Single = 0.0F
+        Dim fIntroFadeIn As Single = 0.5F
+        Dim fIntroFadeOut As Single = 0.5F
+        Dim fIntroTotalTime As Single = 1.0F
 
         'Menu Buttons
         Dim btnStartGame As MenuButton
@@ -177,6 +177,13 @@ Namespace Isotope
             If GetKeyPress(Key.Number4) Then
                 gEffectLevel = GameMath.ClampInteger(gEffectLevel - 1, 1, EffectLevel.Ultra)
             End If
+
+            If gCurrentKeyboardState.IsKeyDown(Key.L) Then
+                gViewport.ViewportRealSize += New Vector2(1.0F, 1.0F)
+            End If
+            If gCurrentKeyboardState.IsKeyDown(Key.K) Then
+                gViewport.ViewportRealSize += New Vector2(1.0F, 1.0F)
+            End If
             If GetKeyPress(Key.Number5) Then
                 gEffectLevel = GameMath.ClampInteger(gEffectLevel + 1, 0, EffectLevel.Ultra)
             End If
@@ -191,7 +198,7 @@ Namespace Isotope
             Select Case gGameState
                 Case GameState.Game
                     'Set the Viewport relative resolution
-                    gViewport.ViewportRealSize = New Vector2(800.0F, 800.0F)
+                    'gViewport.ViewportRealSize = New Vector2(800.0F, 800.0F)
 
                     Dim b As Boolean
                     'Move the viewport to follow the first object(the player) and ensure that it wont fly of the screen to far.
@@ -222,7 +229,7 @@ Namespace Isotope
                             fRefire += gGameTime.DeltaTime
                             'Is the client asking to fire, is the player allowes to shoot yet?
                             If gCurrentMouseState.LeftButton And fRefire > fRefireTime Then
-                                gGameEntitys.Add(New Bullet(gGameEntitys(0).vPosition, New Vector2(40.0F, 20.0F), gGameEntitys(0).vMovement, New Integer() {gTextures(13).ID}, New Color4(1.0F, 0.66666F, 0.2F, 0.0F), 5.0F, GameObject.ParticleAlgorithm.Circle))
+                                gGameEntitys.Add(New Bullet(gGameEntitys(0).vPosition, New Vector2(40.0F, 20.0F), gGameEntitys(0), New Integer() {gTextures(13).ID}, New Color4(1.0F, 0.66666F, 0.2F, 0.0F), 5.0F, GameObject.ParticleAlgorithm.Circle))
                                 fRefire = 0.0F
                             End If
 
@@ -344,7 +351,8 @@ Namespace Isotope
                                         Dim CollisionIds() As Integer = gQuadTree.GetWithin(g.vPosition, 100).ToArray
                                         For i As Integer = 0 To CollisionIds.Length - 1
                                             If gGameEntitys(CollisionIds(i)).eEntity = GameObject.ObjectType.Enemy Then
-                                                If GameMath.Vector2Distance(gGameEntitys(CollisionIds(i)).vPosition, g.vPosition) < gGameEntitys(CollisionIds(i)).vSize.X - 10 Then
+                                                Dim fRadius As Single = gGameEntitys(CollisionIds(i)).vSize.X / 2
+                                                If GameMath.Vector2Distance(gGameEntitys(CollisionIds(i)).vPosition, g.vPosition) < Math.Sqrt(fRadius * fRadius + fRadius * fRadius) Then
                                                     'Destroy the enemy and the bullet
                                                     createParticle(gGameEntitys(CollisionIds(i)).vPosition, ParticleType.Firework, GameObject.ParticleAlgorithm.Circle)
                                                     createParticle(g.vPosition, ParticleType.Firework, GameObject.ParticleAlgorithm.Spread)

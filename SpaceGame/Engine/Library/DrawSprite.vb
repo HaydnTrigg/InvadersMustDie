@@ -88,6 +88,7 @@ Namespace Isotope.Library
 
             'End drawing ready for another draw call.
             GL.End()
+
         End Sub
 
         'Mathematic Information: http://www.puz.com/sw/amorphous/theory/

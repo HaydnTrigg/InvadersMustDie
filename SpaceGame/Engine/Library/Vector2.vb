@@ -104,9 +104,4 @@ Public NotInheritable Class Vector2
 
 #End Region
 
-
-
-
-
-
 End Class
