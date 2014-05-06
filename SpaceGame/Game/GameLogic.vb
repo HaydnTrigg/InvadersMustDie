@@ -351,18 +351,28 @@ Namespace Isotope
                                         Dim CollisionIds() As Integer = gQuadTree.GetWithin(g.vPosition, 100).ToArray
                                         For i As Integer = 0 To CollisionIds.Length - 1
                                             If gGameEntitys(CollisionIds(i)).eEntity = GameObject.ObjectType.Enemy Then
-                                                Dim fRadius As Single = gGameEntitys(CollisionIds(i)).vSize.X / 2
-                                                If GameMath.Vector2Distance(gGameEntitys(CollisionIds(i)).vPosition, g.vPosition) < Math.Sqrt(fRadius * fRadius + fRadius * fRadius) Then
-                                                    'Destroy the enemy and the bullet
-                                                    createParticle(gGameEntitys(CollisionIds(i)).vPosition, ParticleType.Firework, GameObject.ParticleAlgorithm.Circle)
-                                                    createParticle(g.vPosition, ParticleType.Firework, GameObject.ParticleAlgorithm.Spread)
+                                                If (gGameEntitys(CollisionIds(i)).eLifeState = GameObject.LifeState.Alive) Then
 
-                                                    gGameEntitys.Remove(g)
-                                                    gGameEntitys.RemoveAt(CollisionIds(i))
+                                                    Dim fRadius As Single = gGameEntitys(CollisionIds(i)).vSize.X / 2
+                                                    If GameMath.Vector2Distance(gGameEntitys(CollisionIds(i)).vPosition, g.vPosition) < Math.Sqrt(fRadius * fRadius + fRadius * fRadius) Then
+                                                        'Destroy the enemy and the bullet
+                                                        'createParticle(gGameEntitys(CollisionIds(i)).vPosition, ParticleType.Firework, GameObject.ParticleAlgorithm.Circle)
+                                                        createParticle(g.vPosition, ParticleType.Firework, GameObject.ParticleAlgorithm.Spread)
 
+                                                        gGameEntitys.Remove(g)
+
+                                                        ' Decrease enemy health
+                                                        gGameEntitys(CollisionIds(i)).fHealth -= 30
+                                                        'gGameEntitys.RemoveAt(CollisionIds(i)) 'Remove entity
+                                                    End If
                                                 End If
                                             End If
                                         Next
+                                    Case GameObject.ObjectType.Enemy
+                                        If (g.eLifeState = GameObject.LifeState.Dead) Then
+                                            gGameEntitys.Remove(g)
+                                            createParticle(g.vPosition, ParticleType.Firework, GameObject.ParticleAlgorithm.Spread)
+                                        End If
                                 End Select
                             Next
                         Catch ex As Exception

@@ -148,7 +148,9 @@ Namespace Isotope
                 'Update the gametime ready for this update iteration
                 gGameTime = getGameTime
                 updateAccumulator += gGameTime.DeltaTime
-
+                If (updateAccumulator >= 0.25) Then
+                    updateAccumulator = 0.25
+                End If
                 While (updateAccumulator > updateTime)
                     updateAccumulator -= updateTime
                     TotalTime += delta

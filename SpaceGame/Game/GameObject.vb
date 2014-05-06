@@ -28,6 +28,24 @@ Public Class GameObject
         Circle = 1
     End Enum
 
+    Enum LifeState
+        Alive
+        Dying
+        Dead
+    End Enum
+
+    Structure Particle
+
+        'Array to hold all of the Particle positions
+        Dim position As Vector2
+
+        'Array to hold the Particle vMovement normals.
+        Dim direction As Vector2
+
+        'Array to hold all of the Particles speed.
+        Dim speed As Single
+    End Structure
+
 #End Region
 #Region "Variables and Properties"
 
@@ -78,6 +96,16 @@ Public Class GameObject
 
     'Specifies the type of object
     Public eEntity As ObjectType = ObjectType.Other
+
+    'Specifies the current life state of the object
+    Public eLifeState As LifeState = LifeState.Alive
+
+    'Specifies how much health the object has left
+    Public fHealth As Single = 100.0
+
+    'Specifies how long it takes to die
+    Public fDieTime As Single = 1.0
+    Public fDieTimeAccumulator As Single = 0.0
 
     'Create's a percentage of how long the object will live.
     ReadOnly Property fLifespanPercentage As Single
@@ -206,6 +234,10 @@ Public Class Spinner
         'Set the maximum speed of the Entity to 150
         fSpeedMax = 60.0F + (_Random.NextDouble() * 80.0F)
 
+        fDieTime = 0.1
+
+        fHealth = 33 + (_Random.NextDouble() * 20)
+
         'Add extra code below
         eEntity = ObjectType.Enemy
     End Sub
@@ -215,17 +247,34 @@ Public Class Spinner
 
     'Override Update statement.
     Public Overrides Sub Update(ByVal delta As Single, ByVal gRandom As Random, ByVal _Target As Vector2)
-        'Accelerate the object and clamp its speed to the maximum.
-        fSpeed = GameMath.ClampFloat(fSpeed + fAcceleration * delta, 0, fSpeedMax)
+        Select Case eLifeState
 
-        'Smooth the vMovement using linear interpolation against a calculated normal specifying the direction of the target.
-        vMovement = GameMath.Lerp(vMovement, GameMath.NormalizeVector2(_Target - vPosition), delta)
+            Case LifeState.Alive
+                ' :: ALIVE ::
+                'Accelerate the object and clamp its speed to the maximum.
+                fSpeed = GameMath.ClampFloat(fSpeed + fAcceleration * delta, 0, fSpeedMax)
 
-        'Calculate and clamp the position.
-        vPosition = GameMath.ClampVector(vPosition + vMovement * delta * fSpeed, vSize / 2, New Vector2(1000.0F) - vSize / 2)
+                'Smooth the vMovement using linear interpolation against a calculated normal specifying the direction of the target.
+                vMovement = GameMath.Lerp(vMovement, GameMath.NormalizeVector2(_Target - vPosition), delta)
 
-        'Spin the entity around and change it a little so it dosen't mimic every other entity.
-        fRotation += delta * (0.5F + gRandom.NextDouble()) * 3
+                'Calculate and clamp the position.
+                vPosition = GameMath.ClampVector(vPosition + vMovement * delta * fSpeed, vSize / 2, New Vector2(1000.0F) - vSize / 2)
+
+                'Spin the entity around and change it a little so it dosen't mimic every other entity.
+                fRotation += delta * (0.5F + gRandom.NextDouble()) * 3
+
+                If (fHealth <= 0) Then
+                    eLifeState = GameObject.LifeState.Dying
+                End If
+
+            Case LifeState.Dying
+                ' :: DYING/DEAD ::
+                vSize += delta * 500
+                fDieTimeAccumulator += delta
+                If (fDieTimeAccumulator >= fDieTime) Then
+                    eLifeState = LifeState.Dead
+                End If
+        End Select
     End Sub
 
     Public Overrides Sub Draw(ByVal delta As Single, ByVal gViewport As Viewport)
@@ -257,6 +306,10 @@ Public Class Revolver
         'Set the maximum speed of the Entity to 150
         fSpeedMax = 80 + (_Random.NextDouble() * 80)
 
+        fDieTime = 0.1
+
+        fHealth = 23 + (_Random.NextDouble() * 10)
+
         'Add extra code below
         eEntity = ObjectType.Enemy
     End Sub
@@ -265,17 +318,34 @@ Public Class Revolver
 #Region "Main Methods"
 
     Public Overrides Sub Update(ByVal delta As Single, ByVal gRandom As Random, ByVal _Target As Vector2)
-        'Accelerate the object and clamp its speed to the maximum.
-        fSpeed = GameMath.ClampFloat(fSpeed + fAcceleration * delta, 0, fSpeedMax)
+        Select Case eLifeState
 
-        'Smooth the vMovement using linear interpolation against a calculated normal specifying the direction of the target.
-        vMovement = GameMath.Lerp(vMovement, GameMath.NormalizeVector2(_Target - vPosition), delta)
+            Case LifeState.Alive
+                ' :: ALIVE ::
+                'Accelerate the object and clamp its speed to the maximum.
+                fSpeed = GameMath.ClampFloat(fSpeed + fAcceleration * delta, 0, fSpeedMax)
 
-        'Calculate and clamp the position.
-        vPosition = GameMath.ClampVector(vPosition + vMovement * delta * fSpeed, vSize / 2, New Vector2(1000.0F) - vSize / 2)
+                'Smooth the vMovement using linear interpolation against a calculated normal specifying the direction of the target.
+                vMovement = GameMath.Lerp(vMovement, GameMath.NormalizeVector2(_Target - vPosition), delta)
 
-        'Spin the entity around and change it a little so it dosen't mimic every other entity.
-        fRotation += delta * (0.5F + gRandom.NextDouble()) * 3
+                'Calculate and clamp the position.
+                vPosition = GameMath.ClampVector(vPosition + vMovement * delta * fSpeed, vSize / 2, New Vector2(1000.0F) - vSize / 2)
+
+                'Spin the entity around and change it a little so it dosen't mimic every other entity.
+                fRotation += delta * (0.5F + gRandom.NextDouble()) * 3
+
+                If (fHealth <= 0) Then
+                    eLifeState = GameObject.LifeState.Dying
+                End If
+
+            Case LifeState.Dying
+                ' :: DYING/DEAD ::
+                vSize += delta * 500
+                fDieTimeAccumulator += delta
+                If (fDieTimeAccumulator >= fDieTime) Then
+                    eLifeState = LifeState.Dead
+                End If
+        End Select
     End Sub
 
     Public Overrides Sub Draw(ByVal delta As Single, ByVal gViewport As Viewport)
@@ -302,6 +372,8 @@ Public Class Bullet
 
     'The current drawing color of the particles.
     Dim cDrawColor As Color4
+
+
 
 #End Region
 #Region "Initializers"
@@ -347,6 +419,7 @@ Public Class Bullet
     End Sub
 
     Public Overrides Sub Draw(ByVal delta As Single, ByVal gViewport As Viewport)
+        ' :: SHIP ::
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One) 'Use additive blending with transparency
         'Draw the bullet with the specified color
         GL.Color4(cDrawColor)
@@ -358,6 +431,10 @@ Public Class Bullet
 
         'Reset the drawing color back to the default
         GL.Color4(Color4.White)
+
+        ' :: ENGINE PARTICLES ::
+
+
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha) 'Use linear transparency blending [default]
     End Sub
 
@@ -371,15 +448,8 @@ Public Class Explosion
 
 #End Region
 #Region "Variables and Properties"
-
-    'Array to hold all of the Particle positions
-    Dim vPositions() As Vector2 = New Vector2() {}
-
-    'Array to hold the Particle vMovement normals.
-    Dim vParticleMovement() As Vector2 = New Vector2() {}
-
-    'Array to hold all of the Particles speed.
-    Dim vSpeed() As Single = New Single() {}
+    'Arrray to hold all of the Particles
+    Dim vParticles() As Particle = New Particle() {}
 
     'The color of the particles
     Dim cColorTarget As Color4
@@ -397,21 +467,40 @@ Public Class Explosion
         MyBase.New(_Position, _Size, _TextureID)
 
         'Calculate the amount of particles that will be created.
-        Dim iParticleCount As Integer = GameMath.ClampInteger(50 * _ParticleLevel, 0, Integer.MaxValue) - 1
+        Dim fRavg As Single = (1.5 * 200 / 100) * _Lifespan 'Calculate the average radius of the spread
+        Dim fC = 2.0 * Math.PI * fRavg 'Calculate the average circumference
+        Dim iParticleCount As Integer = GameMath.ClampInteger(fC * _ParticleLevel, 0, Integer.MaxValue) - 1
 
-        'Create 50*x Positions, Speed and Movement values for each particle.
-        vPositions = New Vector2(iParticleCount) {}
-        vSpeed = New Single(iParticleCount) {}
-        vParticleMovement = New Vector2(iParticleCount) {}
-        For i As Integer = 0 To vParticleMovement.Length - 1
-            vSpeed(i) = (_Random.NextDouble() + 1) * 200
-            vParticleMovement(i) = New Vector2(_Random.NextDouble, _Random.NextDouble) - 0.5F
-            vParticleMovement(i).Normalize()
-            vPositions(i) = vPosition
+
+        ' Create an array to store all the particles
+        vParticles = New Particle(iParticleCount) {}
+
+        For i As Integer = 0 To iParticleCount
+            vParticles(i).position = vPosition 'Set starting position
+
+            Dim angle As Double = _Random.NextDouble() * 2.0 * Math.PI '0-360 degrees in radians
+            vParticles(i).direction = New Vector2(Math.Cos(angle), Math.Sin(angle)) 'Set the direction as a vector
+
+            vParticles(i).speed = (_Random.NextDouble() + 1) * 200
         Next
 
+
+
+
+
+        ''Create 50*x Positions, Speed and Movement values for each particle.
+        'vPositions = New Vector2(iParticleCount) {}
+        'vSpeed = New Single(iParticleCount) {}
+        'vParticleMovement = New Vector2(iParticleCount) {}
+        'For i As Integer = 0 To vParticleMovement.Length - 1
+        '    vSpeed(i) = (_Random.NextDouble() + 1) * 200
+        '    vParticleMovement(i) = New Vector2(_Random.NextDouble, _Random.NextDouble) - 0.5F
+        '    vParticleMovement(i).Normalize()
+        '    vPositions(i) = vPosition
+        'Next
+
         'Define the fastest speed of the particles
-        fSpeedMax = 200.0F
+        fSpeedMax = 400.0F
 
         'Define the lifespan of the particle.
         fLifespanMax = _Lifespan * 0.5
@@ -431,27 +520,40 @@ Public Class Explosion
 
     Public Overrides Sub Update(ByVal delta As Single, ByVal gRandom As System.Random, ByVal _Target As Vector2)
         'Iterate through all of the particles inside of this Object
-        For i As Integer = 0 To vParticleMovement.Length - 1
-            'Select Case eParticleAlgorithm
-            '    Case ParticleAlgorithm.Spread
-            '        'Slow the particle by a 7th of the current particles speed. X = X-X(delta/7)
-            '        vSpeed(i) = GameMath.ClampFloat(vSpeed(i) - Math.Sqrt(vSpeed(i)) * delta / 3.5F, 0.1F, fSpeedMax)
-            '    Case ParticleAlgorithm.Circle
-            '        'Use SpreadRoot Algorithm
-            '        vSpeed(i) = GameMath.ClampFloat(vSpeed(i) - Math.Sqrt(vSpeed(i)) * delta * fLifespanPercentage * 250, fSpeedMax * (1 - fLifespanPercentage), fSpeedMax)
-            'End Select
+        'For i As Integer = 0 To vParticles.Length - 1
+        '    'Select Case eParticleAlgorithm
+        '    '    Case ParticleAlgorithm.Spread
+        '    '        'Slow the particle by a 7th of the current particles speed. X = X-X(delta/7)
+        '    '        vSpeed(i) = GameMath.ClampFloat(vSpeed(i) - Math.Sqrt(vSpeed(i)) * delta / 3.5F, 0.1F, fSpeedMax)
+        '    '    Case ParticleAlgorithm.Circle
+        '    '        'Use SpreadRoot Algorithm
+        '    '        vSpeed(i) = GameMath.ClampFloat(vSpeed(i) - Math.Sqrt(vSpeed(i)) * delta * fLifespanPercentage * 250, fSpeedMax * (1 - fLifespanPercentage), fSpeedMax)
+        '    'End Select
 
 
+        '    'Check if the particle collides with the boundary on the X axis.
+        '    If vPositions(i).X > 995.0F Or vPositions(i).X < 5.0F Then
+        '        vParticleMovement(i).X *= -1
+        '    Else
+        '        'Check if the particle collides with the boundary on the Y axis.
+        '        If vPositions(i).Y > 995.0F Or vPositions(i).Y < 5.0F Then
+        '            vParticleMovement(i).Y *= -1
+        '        End If
+        '    End If
+        '    vPositions(i) = GameMath.ClampVectorSingle(vPositions(i) + (vParticleMovement(i) * vSpeed(i) * delta), 4.0F, 4.0F, 996.0F, 996.0F)
+        'Next
+
+        For i As Integer = 0 To vParticles.Length - 1
             'Check if the particle collides with the boundary on the X axis.
-            If vPositions(i).X > 995.0F Or vPositions(i).X < 5.0F Then
-                vParticleMovement(i).X *= -1
+            If vParticles(i).position.X > 995.0F Or vParticles(i).position.X < 5.0F Then
+                vParticles(i).direction.X *= -1
             Else
                 'Check if the particle collides with the boundary on the Y axis.
-                If vPositions(i).Y > 995.0F Or vPositions(i).Y < 5.0F Then
-                    vParticleMovement(i).Y *= -1
+                If vParticles(i).position.Y > 995.0F Or vParticles(i).position.Y < 5.0F Then
+                    vParticles(i).direction.Y *= -1
                 End If
             End If
-            vPositions(i) = GameMath.ClampVectorSingle(vPositions(i) + (vParticleMovement(i) * vSpeed(i) * delta), 4.0F, 4.0F, 996.0F, 996.0F)
+            vParticles(i).position = GameMath.ClampVectorSingle(vParticles(i).position + (vParticles(i).direction * vParticles(i).speed * delta), 4.0F, 4.0F, 996.0F, 996.0F)
         Next
 
         'Calculate the current color of the particle object.
@@ -469,8 +571,8 @@ Public Class Explosion
         GL.Color4(cDrawColor)
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One) 'Use additive blending with transparency
         'Iterate through all of the particles and draw them.
-        For i As Integer = 0 To vParticleMovement.Length - 1
-            Draw2dRotated(gViewport, iTextureIdentification(0), vPositions(i), vDrawSize, vParticleMovement(i).Rotation)
+        For i As Integer = 0 To vParticles.Length - 1
+            Draw2dRotated(gViewport, iTextureIdentification(0), vParticles(i).position, vDrawSize, vParticles(i).direction.Rotation)
         Next
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha) 'Use linear transparency blending [default]
     End Sub
