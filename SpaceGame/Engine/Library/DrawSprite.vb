@@ -3,11 +3,18 @@ Imports OpenTK.Graphics.OpenGL
 
 Namespace Isotope.Library
     Public Class DrawSprite
+
+        Public Shared Sub BindTexture2D(ByVal texture As Integer)
+            GL.BindTexture(TextureTarget.Texture2D, texture)
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, TextureWrapMode.ClampToEdge)
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, TextureWrapMode.ClampToEdge)
+        End Sub
+
         Public Shared Sub Draw2D(ByVal _Viewport As Viewport, ByVal _TextureID As Integer, ByVal _Position As Vector2, ByVal _Size As Vector2)
             Dim vRelativePosition As Vector2 = _Position - _Viewport.Position
 
             'Assign's the current texture to the graphics device.
-            GL.BindTexture(TextureTarget.Texture2D, _TextureID)
+            BindTexture2D(_TextureID)
 
             'Begins drawing Quads
             GL.Begin(BeginMode.Quads)
@@ -31,7 +38,7 @@ Namespace Isotope.Library
             v /= _Viewport.ViewportScale
 
             'Assign's the current texture to the graphics device.
-            GL.BindTexture(TextureTarget.Texture2D, _TextureID)
+            BindTexture2D(_TextureID)
             'Begins drawing Quads
             GL.Begin(BeginMode.Quads)
             If _Center Then
@@ -67,7 +74,7 @@ Namespace Isotope.Library
             Dim vTemp As Vector2
 
             'Assign's the current texture to the graphics device.
-            GL.BindTexture(TextureTarget.Texture2D, _TextureID)
+            BindTexture2D(_TextureID)
 
             'Begins drawing Quads
             GL.Begin(BeginMode.Quads)
