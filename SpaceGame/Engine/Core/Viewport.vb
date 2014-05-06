@@ -23,11 +23,15 @@ Namespace Isotope
         ReadOnly Property ViewportScale As Single
             Get
                 If Width >= Height Then
-                    Return Width / ViewportRealSize.X
+                    Dim a As Single = Width / ViewportRealSize.X
+                    If (a > 0.5) Then
+                        Return 1.25 * Height / ViewportRealSize.Y
+                    Else
+                        Return a
+                    End If
                 Else
-                    Return Height / ViewportRealSize.Y
+                    Return 1.25 * Height / ViewportRealSize.Y
                 End If
-
             End Get
         End Property
 

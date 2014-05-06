@@ -45,6 +45,7 @@ Namespace Isotope
             PlayerExplosionFirework = 1
             Nova = 2
             Menu = 3
+            Bullet = 4
         End Enum
 
         'A structure to hold Texture Identitifaction Information
@@ -212,13 +213,43 @@ Namespace Isotope
                             'Run all player code below!!!
 
                             'Is the client asking the player to accelerate, decelerate to idle.
+                            gGameEntitys(0).iAccelerating = 0
+
+                            Dim gPlayer As PlayerShip = gGameEntitys(0)
+
+                            gPlayer.vAcceleration.X = 0
+                            gPlayer.vAcceleration.Y = 0
+
                             If gCurrentKeyboardState.IsKeyDown(Key.W) Then
                                 gGameEntitys(0).iAccelerating = 1
-                            ElseIf gCurrentKeyboardState.IsKeyDown(Key.S) Then
-                                gGameEntitys(0).iAccelerating = -1
-                            Else
-                                gGameEntitys(0).iAccelerating = 0
+                                gPlayer.vAcceleration.Y -= 1
                             End If
+
+                            If gCurrentKeyboardState.IsKeyDown(Key.S) Then
+                                gGameEntitys(0).iAccelerating = 1
+                                gPlayer.vAcceleration.Y += 1
+                            End If
+
+                            If gCurrentKeyboardState.IsKeyDown(Key.A) Then
+                                gGameEntitys(0).iAccelerating = 1
+                                gPlayer.vAcceleration.X -= 1
+                            End If
+
+                            If gCurrentKeyboardState.IsKeyDown(Key.D) Then
+                                gGameEntitys(0).iAccelerating = 1
+                                gPlayer.vAcceleration.X += 1
+
+                            End If
+                            gPlayer.vAcceleration = GameMath.NormalizeVector2(gPlayer.vAcceleration)
+
+                            'If gCurrentKeyboardState.IsKeyDown(Key.W) Then
+
+                            'ElseIf gCurrentKeyboardState.IsKeyDown(Key.S) Then
+                            '    gGameEntitys(0).iAccelerating = -1
+                            'Else
+                            '    gGameEntitys(0).iAccelerating = 0
+                            'End If
+
                             If gCurrentKeyboardState.IsKeyDown(Key.ShiftLeft) Then
                                 gGameEntitys(0).bBoosting = True
                             Else
@@ -229,7 +260,7 @@ Namespace Isotope
                             fRefire += delta
                             'Is the client asking to fire, is the player allowes to shoot yet?
                             If gCurrentMouseState.LeftButton And fRefire > fRefireTime Then
-                                gGameEntitys.Add(New Bullet(gGameEntitys(0).vPosition, New Vector2(40.0F, 20.0F), gGameEntitys(0), New Integer() {gTextures(13).ID}, New Color4(1.0F, 0.66666F, 0.2F, 0.0F), 5.0F, GameObject.ParticleAlgorithm.Circle))
+                                gGameEntitys.Add(New Bullet(gGameEntitys(0).vPosition, gViewport.MousePosition, New Vector2(40.0F, 20.0F), gGameEntitys(0), New Integer() {gTextures(13).ID}, New Color4(1.0F, 0.66666F, 0.2F, 0.0F), 5.0F, GameObject.ParticleAlgorithm.Circle))
                                 fRefire = 0.0F
                             End If
 
@@ -290,7 +321,7 @@ Namespace Isotope
                             pSpawnTimeMax = pSpawnTime
                         End If
                         pSpawnTime -= delta
-                        If pSpawnTime < -3 Then
+                        If pSpawnTime < -1 Then
                             SpawnPlayer()
                             pSpawnTime = 0.0F
                         End If
@@ -333,17 +364,18 @@ Namespace Isotope
                                         Dim CollisionIds() As Integer = gQuadTree.GetWithin(g.vPosition, 100).ToArray
                                         For i As Integer = 0 To CollisionIds.Length - 1
                                             If gGameEntitys(CollisionIds(i)).eEntity = GameObject.ObjectType.Enemy Then
-                                                If GameMath.Vector2Distance(gGameEntitys(CollisionIds(i)).vPosition, g.vPosition) < gGameEntitys(CollisionIds(i)).vSize.X - 10 Then
-                                                    'Destroy all objects
-                                                    For Each gg As GameObject In gGameEntitys.ToArray
-                                                        If Not gg.eEntity = GameObject.ObjectType.Bullet Then
-                                                            createParticle(gg.vPosition, ParticleType.Firework)
-                                                        End If
-                                                    Next
-                                                    Dim v2 As Vector2 = g.vPosition
-                                                    gGameEntitys.Clear()
-                                                    pSpawnTime = 0.0F
-                                                    createParticle(v2, ParticleType.PlayerExplosionFirework)
+                                                If (gGameEntitys(CollisionIds(i)).eLifeState = GameObject.LifeState.Alive) Then
+                                                    If GameMath.Vector2Distance(gGameEntitys(CollisionIds(i)).vPosition, g.vPosition) < gGameEntitys(CollisionIds(i)).vSize.X - 10 Then
+                                                        'Destroy all objects
+                                                        For Each gg As GameObject In gGameEntitys.ToArray
+                                                            If Not gg.eEntity = GameObject.ObjectType.Bullet Then
+                                                                createParticle(gg.vPosition, ParticleType.Firework)
+                                                            End If
+                                                        Next
+                                                        createParticle(g.vPosition, ParticleType.PlayerExplosionFirework)
+                                                        gGameEntitys.Clear()
+                                                        pSpawnTime = 0.0F
+                                                    End If
                                                 End If
                                             End If
                                         Next
@@ -357,7 +389,7 @@ Namespace Isotope
                                                     If GameMath.Vector2Distance(gGameEntitys(CollisionIds(i)).vPosition, g.vPosition) < Math.Sqrt(fRadius * fRadius + fRadius * fRadius) Then
                                                         'Destroy the enemy and the bullet
                                                         'createParticle(gGameEntitys(CollisionIds(i)).vPosition, ParticleType.Firework, GameObject.ParticleAlgorithm.Circle)
-                                                        createParticle(g.vPosition, ParticleType.Firework, GameObject.ParticleAlgorithm.Spread)
+                                                        createParticle(g.vPosition, ParticleType.Bullet, GameObject.ParticleAlgorithm.Spread)
 
                                                         gGameEntitys.Remove(g)
 
@@ -368,6 +400,13 @@ Namespace Isotope
                                                 End If
                                             End If
                                         Next
+                                        If g.vPosition.X > 995.0F Or g.vPosition.X < 5.0F Or g.vPosition.Y > 995.0F Or g.vPosition.Y < 5.0F Then
+                                            createParticle(g.vPosition, ParticleType.Bullet, GameObject.ParticleAlgorithm.Spread)
+
+                                            gGameEntitys.Remove(g)
+                                        Else
+
+                                        End If
                                     Case GameObject.ObjectType.Enemy
                                         If (g.eLifeState = GameObject.LifeState.Dead) Then
                                             gGameEntitys.Remove(g)
@@ -608,19 +647,23 @@ Namespace Isotope
                         If bUsingEffectThread Then
                             'If running from the bParticleThread
                             'Create a new Explosion Particle with whatever settings are supplied
-                            gGameEffects.Add(New Explosion(_Position, New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, gEffectLevel, ZeroColorAlpha(RandomColor4()), 2.0F, _Algorithm))
+                            gGameEffects.Add(New Explosion(_Position, gRandom, New Integer() {gTextures(8).ID}, gEffectLevel, ZeroColorAlpha(RandomColor4()), 2.0F, _Algorithm))
                         Else
                             'If Not running from the bParticleThread
                             'Create a new Explosion Particle with whatever settings are supplied with the exception the maximum particles can only be on Low
-                            gGameEffects.Add(New Explosion(_Position, New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, GameMath.ClampInteger(gEffectLevel, 0, EffectLevel.Low), ZeroColorAlpha(RandomColor4()), 2.0F, _Algorithm))
+                            gGameEffects.Add(New Explosion(_Position, gRandom, New Integer() {gTextures(8).ID}, GameMath.ClampInteger(gEffectLevel, 0, EffectLevel.Low), ZeroColorAlpha(RandomColor4()), 2.0F, _Algorithm))
                         End If
                     End If
                 Case ParticleType.PlayerExplosionFirework
-                    gGameEffects.Add(New Explosion(_Position, New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, gEffectLevel * 20, New Color4(1.0F, 1.0F, 1.0F, 0.0F), 5.0F, Explosion.ParticleAlgorithm.Spread))
+                    gGameEffects.Add(New Explosion(_Position, gRandom, New Integer() {gTextures(8).ID}, gEffectLevel * 20, New Color4(1.0F, 1.0F, 1.0F, 0.0F), 5.0F, Explosion.ParticleAlgorithm.Spread))
                 Case ParticleType.Nova
-                    gGameEffects.Add(New Explosion(_Position, New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, gEffectLevel * 20, ZeroColorAlpha(RandomColor4()), 9.0F, Explosion.ParticleAlgorithm.Spread))
+                    gGameEffects.Add(New Explosion(_Position, gRandom, New Integer() {gTextures(8).ID}, gEffectLevel * 20, ZeroColorAlpha(RandomColor4()), 9.0F, Explosion.ParticleAlgorithm.Spread))
                 Case ParticleType.Menu
-                    gGameEffects.Add(New Explosion(_Position, New Vector2(200, 200), gRandom, New Integer() {gTextures(8).ID}, 0.0F * gEffectLevel, ZeroColorAlpha(RandomColor4()), 5.0F, _Algorithm))
+                    gGameEffects.Add(New Explosion(_Position, gRandom, New Integer() {gTextures(8).ID}, 0.0F * gEffectLevel, ZeroColorAlpha(RandomColor4()), 5.0F, _Algorithm))
+                Case ParticleType.Bullet
+                    gGameEffects.Add(New Explosion(_Position, gRandom, New Integer() {gTextures(8).ID}, gEffectLevel, New Color4(1.0F, 0.35F, 0.125F, 0.0F), 1.0F, Explosion.ParticleAlgorithm.Spread))
+                    'gGameEffects.Add(New Explosion(_Position, gRandom, New Integer() {gTextures(8).ID}, 0.0F * gEffectLevel, New Color4(1.0F, 0.35F, 0.125F, 0.0F), 2.0F, Explosion.ParticleAlgorithm.Spread))
+
             End Select
         End Sub
 

@@ -41,6 +41,9 @@ Public Class GameObject
 
         'Array to hold the Particle vMovement normals.
         Dim direction As Vector2
+        ' :: PRE CALCULATED VARIABLES ::
+        Dim movement As Vector2
+        Dim rotation As Single
 
         'Array to hold all of the Particles speed.
         Dim speed As Single
@@ -102,6 +105,7 @@ Public Class GameObject
 
     'Specifies how much health the object has left
     Public fHealth As Single = 100.0
+    Public fMaxHealth As Single = 0
 
     'Specifies how long it takes to die
     Public fDieTime As Single = 1.0
@@ -148,6 +152,7 @@ Public Class PlayerShip
 
 #End Region
 #Region "Variables and Properties"
+    Public vAcceleration As Vector2 = New Vector2(0)
 
 #End Region
 #Region "Initializers"
@@ -169,6 +174,7 @@ Public Class PlayerShip
 
         'Defines the extra boost speed of the Object
         fBoostSpeedMax = 150.0F
+
     End Sub
 
 #End Region
@@ -193,24 +199,42 @@ Public Class PlayerShip
             End If
         End If
 
+
         Dim v As Vector2 = _Target - vPosition
         If (v.X = 0 And v.Y = 0) Then
             v = New Vector2(0, 1)
         End If
         v.Normalize()
-        'Smooth the vMovement of the players object
-        vMovement = GameMath.Lerp(vMovement, v, delta * 8)
         'Calculate the rotation to draw with
-        fRotation = vMovement.Rotation() + (Math.PI * 0.5F)
+        fRotation = v.Rotation() + (Math.PI / 2)
+
+        'Smooth the vMovement of the players object
+        'vMovement = GameMath.Lerp(vMovement, v, delta * 8)
+
+        vMovement = GameMath.Lerp(vMovement, vAcceleration, delta * 8)
 
         'Calculate the vMovement
         vPosition = GameMath.ClampVector(vPosition + vMovement * (delta * fSpeed), vSize / 2, New Vector2(1000.0F) - vSize / 2)
     End Sub
-
+    Dim tt As Single = 0.0
     Public Overrides Sub Draw(ByVal delta As Single, ByVal gViewport As Viewport)
+        tt += delta
+
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One) 'Use additive blending with transparency
         Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, fRotation)
+
+        GL.Color4(1.0F, 1.0F, 1.0F, GameMath.ClampFloat(Math.Abs(Math.Sin(tt)), 0, 1) * 0.8)
+        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize * 0.8, fRotation)
+        GL.Color4(1.0F, 1.0F, 1.0F, GameMath.ClampFloat(Math.Abs(Math.Sin(tt - 0.25)), 0, 1) * 0.8)
+        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize * 0.7, fRotation)
+        GL.Color4(1.0F, 1.0F, 1.0F, GameMath.ClampFloat(Math.Abs(Math.Sin(tt - 0.45)), 0, 1) * 0.8)
+        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize * 0.6, fRotation)
+        GL.Color4(1.0F, 1.0F, 1.0F, 1.0F)
+
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha) 'Use linear transparency blending [default]
+
+
+
     End Sub
 #End Region
 End Class
@@ -236,7 +260,7 @@ Public Class Spinner
 
         fDieTime = 0.1
 
-        fHealth = 33 + (_Random.NextDouble() * 20)
+        fHealth = 133 + (_Random.NextDouble() * 20)
 
         'Add extra code below
         eEntity = ObjectType.Enemy
@@ -373,16 +397,20 @@ Public Class Bullet
     'The current drawing color of the particles.
     Dim cDrawColor As Color4
 
+    Dim vInertia As Vector2
+
 
 
 #End Region
 #Region "Initializers"
 
-    Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Parent As PlayerShip, ByVal _TextureID() As Integer, ByVal _ColorTarget As Color4, ByVal _Lifespan As Single, ByVal _Algorithm As ParticleAlgorithm)
+    Sub New(ByVal _Position As Vector2, ByVal _MousePosition As Vector2, ByVal _Size As Vector2, ByVal _Parent As PlayerShip, ByVal _TextureID() As Integer, ByVal _ColorTarget As Color4, ByVal _Lifespan As Single, ByVal _Algorithm As ParticleAlgorithm)
         MyBase.New(_Position, _Size, _TextureID)
 
         'Define the acceleration of the of the object
-        fSpeed = 500.0F + _Parent.fSpeed
+        fSpeed = 2000.0F
+        fSpeedMax = fSpeed + 100.0F
+        'fSpeed = 0.0F 'Inertia test
 
         'Define the lifespan of the particle.
         fLifespanMax = 5.0F
@@ -397,7 +425,10 @@ Public Class Bullet
         eParticleAlgorithm = _Algorithm
 
         'Assign the objects movement.
-        vMovement = GameMath.NormalizeVector2(_Parent.vMovement)
+        vMovement = GameMath.NormalizeVector2(_MousePosition - _Position)
+
+        vInertia = _Parent.vMovement * _Parent.fSpeed
+
     End Sub
 
 #End Region
@@ -405,7 +436,7 @@ Public Class Bullet
 
     Public Overrides Sub Update(ByVal delta As Single, ByVal gRandom As System.Random, ByVal _Movement As Vector2)
 
-        vPosition += vMovement * 1500.0F * delta
+        vPosition += ((vMovement * fSpeed) + (vInertia)) * delta
         fRotation = vMovement.Rotation
 
         'Calculate the current color of the particle object.
@@ -463,14 +494,14 @@ Public Class Explosion
 #End Region
 #Region "Initializers"
 
-    Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer, ByVal _ParticleLevel As Single, ByVal _ColorTarget As Color4, ByVal _Lifespan As Single, ByVal _Algorithm As ParticleAlgorithm)
-        MyBase.New(_Position, _Size, _TextureID)
+    Sub New(ByVal _Position As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer, ByVal _ParticleLevel As Single, ByVal _ColorTarget As Color4, ByVal _Lifespan As Single, ByVal _Algorithm As ParticleAlgorithm)
+        MyBase.New(_Position, New Vector2(0), _TextureID)
 
         'Calculate the amount of particles that will be created.
         Dim fRavg As Single = (1.5 * 200 / 100) * _Lifespan 'Calculate the average radius of the spread
         Dim fC = 2.0 * Math.PI * fRavg 'Calculate the average circumference
         Dim iParticleCount As Integer = GameMath.ClampInteger(fC * _ParticleLevel, 0, Integer.MaxValue) - 1
-
+        iParticleCount *= 2
 
         ' Create an array to store all the particles
         vParticles = New Particle(iParticleCount) {}
@@ -482,6 +513,9 @@ Public Class Explosion
             vParticles(i).direction = New Vector2(Math.Cos(angle), Math.Sin(angle)) 'Set the direction as a vector
 
             vParticles(i).speed = (_Random.NextDouble() + 1) * 200
+
+            vParticles(i).movement = vParticles(i).direction * vParticles(i).speed
+            vParticles(i).rotation = vParticles(i).movement.Rotation
         Next
 
 
@@ -545,15 +579,18 @@ Public Class Explosion
 
         For i As Integer = 0 To vParticles.Length - 1
             'Check if the particle collides with the boundary on the X axis.
-            If vParticles(i).position.X > 995.0F Or vParticles(i).position.X < 5.0F Then
-                vParticles(i).direction.X *= -1
+            If vParticles(i).position.X >= 995.0F Or vParticles(i).position.X <= 5.0F Then
+                vParticles(i).movement.X *= -1
+                vParticles(i).rotation = vParticles(i).movement.Rotation
             Else
                 'Check if the particle collides with the boundary on the Y axis.
-                If vParticles(i).position.Y > 995.0F Or vParticles(i).position.Y < 5.0F Then
-                    vParticles(i).direction.Y *= -1
+                If vParticles(i).position.Y >= 995.0F Or vParticles(i).position.Y <= 5.0F Then
+                    vParticles(i).movement.Y *= -1
+                    vParticles(i).rotation = vParticles(i).movement.Rotation
                 End If
             End If
-            vParticles(i).position = GameMath.ClampVectorSingle(vParticles(i).position + (vParticles(i).direction * vParticles(i).speed * delta), 4.0F, 4.0F, 996.0F, 996.0F)
+            'vParticles(i).position = GameMath.ClampVectorSingle(vParticles(i).position + (vParticles(i).direction * vParticles(i).speed * delta), 4.0F, 4.0F, 996.0F, 996.0F)
+            vParticles(i).position = GameMath.ClampVectorSingle(vParticles(i).position + (vParticles(i).movement * delta), 5.0F, 5.0F, 995.0F, 995.0F)
         Next
 
         'Calculate the current color of the particle object.
@@ -572,7 +609,7 @@ Public Class Explosion
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One) 'Use additive blending with transparency
         'Iterate through all of the particles and draw them.
         For i As Integer = 0 To vParticles.Length - 1
-            Draw2dRotated(gViewport, iTextureIdentification(0), vParticles(i).position, vDrawSize, vParticles(i).direction.Rotation)
+            Draw2dRotated(gViewport, iTextureIdentification(0), vParticles(i).position, vDrawSize, vParticles(i).rotation)
         Next
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha) 'Use linear transparency blending [default]
     End Sub

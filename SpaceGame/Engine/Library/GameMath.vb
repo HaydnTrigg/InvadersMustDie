@@ -2,8 +2,13 @@
     Public NotInheritable Class GameMath
         'Normalizes the Vector2
         Public Shared Function NormalizeVector2(ByVal vector As Vector2) As Vector2
-            Dim val As Single = 1.0F / CSng(Math.Sqrt((vector.X * vector.X) + (vector.Y * vector.Y)))
-            Return New Vector2(vector.X * val, vector.Y * val)
+            Dim x = CSng(Math.Sqrt((vector.X * vector.X) + (vector.Y * vector.Y)))
+            If (x = 0) Then
+                Return New Vector2(0, 0)
+            Else
+                Dim val As Single = 1.0F / x
+                Return New Vector2(vector.X * val, vector.Y * val)
+            End If
         End Function
 
         'Single Precision Clamp
