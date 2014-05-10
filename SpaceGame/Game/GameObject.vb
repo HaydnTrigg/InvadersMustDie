@@ -352,12 +352,12 @@ Public Class Revolver
                 'Calculate and clamp the position.
                 vPosition = GameMath.ClampVector(vPosition + vMovement * delta * fSpeed, vSize / 2, New Vector2(1000.0F) - vSize / 2)
 
-                'Spin the entity around and change it a little so it dosen't mimic every other entity.
-                fRotation += delta * (0.5F + gRandom.NextDouble()) * 4 * fHealthPercent
-
                 If (fHealth <= 0) Then
                     eLifeState = GameObject.LifeState.Dying
                 End If
+
+                'Spin the entity around and change it a little so it dosen't mimic every other entity.
+                fRotation += delta * (0.5F + Rnd()) * fHealthPercent
 
             Case LifeState.Dying
                 ' :: DYING/DEAD ::
@@ -381,17 +381,12 @@ Public Class Revolver
                 End If
             End If
         End If
-
-
-
-
     End Sub
 
     Public Overrides Sub Draw(ByVal delta As Single, ByVal gViewport As Viewport)
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One) 'Use additive blending with transparency
         If (fHealthPercent > 0.65) Then 'atleast 80%
             Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize * fHealthPercent, -fRotation * 2.0F)
-
         End If
         Draw2dRotated(gViewport, iTextureIdentification(1), vPosition, vSize * Math.Max(fHealthPercent, 0.75), fRotation * 1.5F)
         Draw2dRotated(gViewport, iTextureIdentification(2), vPosition, vSize, 0)
@@ -448,12 +443,12 @@ Public Class Spinner
                 'Calculate and clamp the position.
                 vPosition = GameMath.ClampVector(vPosition + vMovement * delta * fSpeed, vSize / 2, New Vector2(1000.0F) - vSize / 2)
 
-                'Spin the entity around and change it a little so it dosen't mimic every other entity.
-                fRotation += delta * (0.5F + gRandom.NextDouble()) * 4.5 * fHealthPercent
-
                 If (fHealth <= 0) Then
                     eLifeState = GameObject.LifeState.Dying
                 End If
+
+                'Spin the entity around and change it a little so it dosen't mimic every other entity.
+                fRotation += delta * (0.5F + Rnd()) * 2.5 * fHealthPercent
 
             Case LifeState.Dying
                 ' :: DYING/DEAD ::
@@ -534,12 +529,12 @@ Public Class Pulser
                 'Calculate and clamp the position.
                 vPosition = GameMath.ClampVector(vPosition + vMovement * delta * fSpeed, vSize / 2, New Vector2(1000.0F) - vSize / 2)
 
-                'Spin the entity around and change it a little so it dosen't mimic every other entity.
-                fRotation += delta * (0.5F + gRandom.NextDouble()) * 4.5 * fHealthPercent
-
                 If (fHealth <= 0) Then
                     eLifeState = GameObject.LifeState.Dying
                 End If
+
+                'Spin the entity around and change it a little so it dosen't mimic every other entity.
+                fRotation += delta * (0.5F + Rnd()) * 4.5 * fHealthPercent
 
             Case LifeState.Dying
                 ' :: DYING/DEAD ::
@@ -560,12 +555,12 @@ Public Class Pulser
     End Sub
 
     Public Overrides Sub Draw(ByVal delta As Single, ByVal gViewport As Viewport)
-        fPulseTime += delta
+        fPulseTime += delta * (Math.PI / (2 * 2)) * 3
 
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One) 'Use additive blending with transparency
         'Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, fRotation)
         Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, 0)
-        Draw2dRotated(gViewport, iTextureIdentification(1), vPosition, vSize * Math.Max(fHealthPercent * Math.Sqrt(Math.Sin(fPulseTime) * Math.Sin(fPulseTime)), 0.6), fRotation)
+        Draw2dRotated(gViewport, iTextureIdentification(1), vPosition, vSize * Math.Max(fHealthPercent * Math.Abs(Math.Sin(fPulseTime)), 0.6), fRotation)
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha) 'Use linear transparency blending [default]
     End Sub
 
@@ -597,7 +592,7 @@ Public Class Bullet
         MyBase.New(_Position, _Size, _TextureID)
 
         'Define the acceleration of the of the object
-        fSpeed = 2000.0F
+        fSpeed = 750.0F
         fSpeedMax = fSpeed + 100.0F
         'fSpeed = 0.0F 'Inertia test
 
@@ -621,7 +616,6 @@ Public Class Bullet
         vMovement.Y = Math.Sin(fTargetAngle + fRandomAngle)
 
         vInertia = _Parent.vMovement * _Parent.fSpeed
-
     End Sub
 
 #End Region
@@ -629,6 +623,7 @@ Public Class Bullet
 
     Public Overrides Sub Update(ByVal delta As Single, ByVal gRandom As System.Random, ByVal _Movement As Vector2)
 
+        'vPosition += ((vInertia + vMovement * fSpeed)) * delta
         vPosition += ((vMovement * fSpeed)) * delta
         fRotation = vMovement.Rotation
 

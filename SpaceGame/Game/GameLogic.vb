@@ -143,6 +143,7 @@ Namespace Isotope
             gTextures.Add(LoadTexture("Content/Textures/Entity/Arrow/gun.png")) '16
             gTextures.Add(LoadTexture("Content/Textures/Entity/Pulser/Pulser_PartA.png")) '17
             gTextures.Add(LoadTexture("Content/Textures/Entity/Pulser/Pulser_PartB.png")) '18
+            gTextures.Add(LoadTexture("Content/Textures/Entity/Reticle.png")) '19
             'gViewport.WindowBorder = WindowBorder.Fixed
 
 
@@ -161,8 +162,6 @@ Namespace Isotope
             gControllState = New GameControll.ControllGameState
             gControllState.gPreviousKeyboardState = gPreviousKeyboardState
             gControllState.gPreviousMouseState = gPreviousMouseState
-            gControllState.gPreviousMouseState = gPreviousMouseState
-            gControllState.gPreviousMouseState = gPreviousMouseState
 
             btnStartGame = New MenuButton(New Vector2(630.0F, 615.0F), gTextures(14).Size, New Integer() {gTextures(14).ID})
             btnExitGame = New MenuButton(New Vector2(630.0F, 655.0F), gTextures(14).Size, New Integer() {gTextures(15).ID})
@@ -174,8 +173,6 @@ Namespace Isotope
 
             'Update the ControllState
             gControllState.gPreviousKeyboardState = gPreviousKeyboardState
-            gControllState.gPreviousMouseState = gPreviousMouseState
-            gControllState.gPreviousMouseState = gPreviousMouseState
             gControllState.gPreviousMouseState = gPreviousMouseState
             gControllState.gViewport = gViewport
 
@@ -281,7 +278,7 @@ Namespace Isotope
                             'If the player is alive and its time to spawn some enemies, spawn some enemies.
                             If fEnemySpawn > fEnemySpawnTime Then
                                 'Add 5 Spinners
-                                For iii As Integer = 0 To 5
+                                For iii As Integer = 1 To 5
                                     'Generate a random position on the playboard.
                                     Dim vPosition As New Vector2(gRandom.NextDouble * 900 + 50, gRandom.NextDouble * 900 + 50)
                                     'Keep generating a new position until the distance is 100 units away from the player.
@@ -292,7 +289,7 @@ Namespace Isotope
                                     gGameEntitys.Add(New Spinner(vPosition, New Vector2(60.0F, 60.0F), gRandom, New Integer() {gTextures(0).ID, gTextures(5).ID}))
                                 Next
                                 'Add 2 Revolvers
-                                For iii As Integer = 0 To 2
+                                For iii As Integer = 1 To 2
                                     'Generate a random position on the playboard.
                                     Dim vPosition As New Vector2(gRandom.NextDouble * 900 + 50, gRandom.NextDouble * 900 + 50)
                                     'Keep generating a new position until the distance is 100 units away from the player.
@@ -302,7 +299,7 @@ Namespace Isotope
                                     gGameEntitys.Add(New Revolver(vPosition, New Vector2(60.0F, 60.0F), gRandom, New Integer() {gTextures(9).ID, gTextures(10).ID, gTextures(11).ID}))
                                 Next
                                 'Add 2 Pulsers
-                                For iii As Integer = 0 To 20
+                                For iii As Integer = 1 To 2
                                     'Generate a random position on the playboard.
                                     Dim vPosition As New Vector2(gRandom.NextDouble * 900 + 50, gRandom.NextDouble * 900 + 50)
                                     'Keep generating a new position until the distance is 100 units away from the player.
@@ -550,7 +547,14 @@ Namespace Isotope
             Select Case gGameState
                 Case GameState.Game
                     'Draw the background
-                    Draw2D(gViewport, gTextures(3).ID, gViewport.Position / 2 - New Vector2(1000, 1000), gTextures(3).Size * 1.5F)
+                    Dim v As New Vector2(0, 0)
+                    If (gGameEntitys.Count > 0) Then
+                        If (Not IsNothing(gGameEntitys(0))) Then
+                            v = (gGameEntitys(0).vPosition - New Vector2(500, 500)) * 1.5
+                        End If
+                    End If
+
+                    Draw2dRotated(gViewport, gTextures(3).ID, New Vector2(500, 500) + v, gTextures(3).Size, 0)
                     Draw2D(gViewport, gTextures(2).ID, New Vector2(0, 0), gTextures(2).Size)
 
                     'Draw the game
@@ -630,6 +634,85 @@ Namespace Isotope
                 For Each g As GameObject In gGameEntitys.ToArray
                     'Select the type of object and do the appropriate update for it
                     g.Draw(delta, gViewport)
+                    If (g.eEntity = GameObject.ObjectType.Enemy) Then
+
+                        Dim TPosInit As Vector2 = g.vPosition
+                        g.Update(delta, gRandom, gGameEntitys(0).vPosition)
+                        Dim TPosFinal = g.vPosition
+                        g.vPosition = TPosInit
+
+                        Dim TVelocity = g.fSpeed
+                        Dim I = GameMath.NormalizeVector2(TPosFinal - TPosInit) * TVelocity
+
+                        Dim BPosInit = gGameEntitys(0).vPosition
+                        Dim BVelocity = 750.0F
+
+
+                        ' Square Target Velocity, Subtract Bullet Velocityu
+                        Dim a = (TVelocity * TVelocity) - (BVelocity * BVelocity)
+
+                        Dim D As Vector2 = TPosInit - BPosInit
+
+                        Dim b = 2.0F * (D.X * I.X + D.Y * I.Y)
+
+                        Dim c = (D.X * D.X + D.Y * D.Y)
+
+                        Dim det = b * b - 4.0 * a * c
+                        Dim time As Single = 0.0
+
+                        If det < 0 Then
+
+                        End If
+
+                        If det > 0 Then
+                            det = Math.Sqrt(det)
+                            time = -0.5 * (b - det) / a
+                            If (time < 0) Then
+                                time = -0.5 * (b + det) / a
+                            End If
+                        Else
+                            time = -0.5 * b / a
+                        End If
+
+                        'time = GameMath.ClampFloat(time, 0, 1)
+
+                        Dim result = TPosInit + I * time
+
+
+
+
+
+
+                        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One) 'Use additive blending with transparency
+
+
+                        'Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, fRotation)
+                        Draw2dRotated(gViewport, gTextures(19).ID, result, gTextures(19).Size, 0)
+
+                        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha) 'Use linear transparency blending [default]
+
+
+
+
+
+
+                        'Dim start = gGameEntitys(0).vPosition
+                        'Dim bulletspeed = 500.0F
+
+                        'Dim targetpos = g.vPosition
+                        'g.Update(delta, gRandom, gGameEntitys(0).vPosition)
+                        'Dim newpos = g.vPosition
+                        'g.vPosition = targetpos
+
+                        'Dim time = GameMath.Vector2Distance(targetpos, start) / bulletspeed
+                        'Dim direction = GameMath.NormalizeVector2(targetpos - start)
+                        'Dim position = (direction * g.fSpeed * time) + targetpos
+
+                        'GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha) 'Use linear transparency blending [default]
+                        ''Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, fRotation)
+                        'Draw2dRotated(gViewport, gTextures(19).ID, position, gTextures(19).Size, 0)
+
+                    End If
                 Next
             Catch ex As Exception
 #If DEBUG Then
