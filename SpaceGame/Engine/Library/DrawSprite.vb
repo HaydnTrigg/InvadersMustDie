@@ -66,6 +66,58 @@ Namespace Isotope.Library
             GL.End()
         End Sub
 
+        'Public Shared Sub Draw2dRotated(ByVal _Viewport As Viewport, ByVal _TextureID As Integer, ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Rotation As Single)
+        '    Dim vRelativePosition As Vector2 = _Position - _Viewport.Position
+
+        '    ' Points around origin 0,0 using the size of the quad
+        '    Dim P0 As New Vector2(_Size.X / 2, -_Size.Y / 2)
+        '    Dim P1 As New Vector2(-_Size.X / 2, -_Size.Y / 2)
+        '    Dim P2 As New Vector2(-_Size.X / 2, _Size.Y / 2)
+        '    Dim P3 As New Vector2(_Size.X / 2, _Size.Y / 2)
+
+        '    'Length of the points from the origin
+        '    Dim L0 As Single = Vector2.Length(P0)
+        '    Dim L1 As Single = Vector2.Length(P1)
+        '    Dim L2 As Single = Vector2.Length(P2)
+        '    Dim L3 As Single = Vector2.Length(P3)
+
+        '    'Angle of the points from the origin
+        '    Dim A0 As Single = Vector2.Angle(P0)
+        '    Dim A1 As Single = Vector2.Angle(P1)
+        '    Dim A2 As Single = Vector2.Angle(P2)
+        '    Dim A3 As Single = Vector2.Angle(P3)
+
+        '    'Angle of points from origin + rotation
+        '    Dim A2_0 As Single = A0 - _Rotation
+        '    Dim A2_1 As Single = A1 - _Rotation
+        '    Dim A2_2 As Single = A2 - _Rotation
+        '    Dim A2_3 As Single = A3 - _Rotation
+
+        '    'Points from origin that have been rotated
+        '    Dim P2_0 As Vector2 = New Vector2(Math.Cos(A2_0), Math.Sin(A2_0)) * L0 + vRelativePosition
+        '    Dim P2_1 As Vector2 = New Vector2(Math.Cos(A2_1), Math.Sin(A2_1)) * L1 + vRelativePosition
+        '    Dim P2_2 As Vector2 = New Vector2(Math.Cos(A2_2), Math.Sin(A2_2)) * L2 + vRelativePosition
+        '    Dim P2_3 As Vector2 = New Vector2(Math.Cos(A2_3), Math.Sin(A2_3)) * L3 + vRelativePosition
+
+
+        '    BindTexture2D(_TextureID)
+        '    GL.Begin(BeginMode.Quads)
+
+        '    GL.TexCoord2(0.0F, 0.0F)
+        '    GL.Vertex2(P2_0.X, P2_0.Y)
+
+        '    GL.TexCoord2(1.0F, 0.0F)
+        '    GL.Vertex2(P2_1.X, P2_1.Y)
+
+        '    GL.TexCoord2(1.0F, 1.0F)
+        '    GL.Vertex2(P2_2.X, P2_2.Y)
+
+        '    GL.TexCoord2(0.0F, 1.0F)
+        '    GL.Vertex2(P2_3.X, P2_3.Y)
+
+        '    GL.End()
+
+        'End Sub
 
         'Based from: http://jelle.druyts.net/2004/05/26/RotatingAnImageAroundItsCenterInNET.aspx
         Public Shared Sub Draw2dRotated(ByVal _Viewport As Viewport, ByVal _TextureID As Integer, ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Rotation As Single)

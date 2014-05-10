@@ -79,9 +79,9 @@ Public Class MenuButton
     End Sub
 
     Public Overrides Sub Draw(ByVal delta As Single, ByVal gViewport As Viewport)
-        GL.Color4(cDrawColor)
+        'GL.Color4(cDrawColor)
         Draw2D(gViewport, iTextureIdentification(0), vPosition - vSize / 2, vSize)
-        GL.Color4(Color4.White)
+        'GL.Color4(Color4.White)
     End Sub
 
     Public Function CheckCollision(ByVal _Point1 As Vector2, ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Viewport As Viewport) As Boolean

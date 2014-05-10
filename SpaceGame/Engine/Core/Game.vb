@@ -61,35 +61,11 @@ Namespace Isotope
 
         'Integer that contains an amount of CPU threads that are recognised by default to the Windows operating system
         Dim _CoreCount As Integer = System.Environment.ProcessorCount
-        'Note: Using a Double integer to timing precision.
-        'Constant update of 60 ticks per second.
-        Private _UPDATETIME As Double = 1000D / 60D
-        'Used to store the start time of the update call. This will remove the up/down fps.
-        Private _STARTUPDATETIME As Double = 0
-        'Used to store the start time of the effect call. This will remove the up/down fps.
-        Private _STARTEFFECTTIME As Double = 0
-
-        'Store the game time information. Total and Delta.
-        Dim StartTime As DateTime = DateTime.Now() 'Total time
-        Dim LastTime As DateTime = DateTime.Now() 'Total time last update
-        'Returns a GameTime object storing the time information in an easy to use interface.
-        ReadOnly Property getGameTime As GameTime
-            Get
-                Dim Now As DateTime = DateTime.Now
-                Dim gameTime As GameTime = New GameTime(Now - StartTime, Now - LastTime)
-                LastTime = Now
-                Return gameTime
-            End Get
-        End Property
-        Dim gGameTime As GameTime
 
 #End Region
 #Region "Initializer"
 
         Public Sub New()
-            'Create the gameTime
-            gGameTime = getGameTime
-
             'Create the Viewport
             gViewport = New Viewport(640, 480, "Game")
 
@@ -116,26 +92,62 @@ Namespace Isotope
 #End Region
 #Region "Functions"
 
+        Private Structure IterationTime
+            Const fTimeScale As Single = 100.0 / 100.0
+            Dim fUpdateAccumulator As Single
+            Dim fUpdateInterval As Single 'How often an update can occur
+            Dim fUpdateDelta As Single 'The time that will be used to update
+            Dim lUpdateLastTicks As Long
+            Dim bCanIterate As Boolean
+
+            Public Sub New(ByVal interval As Single)
+                fUpdateAccumulator = 0.0
+                fUpdateInterval = interval
+                fUpdateDelta = interval * fTimeScale
+                lUpdateLastTicks = DateTime.Now.Ticks
+            End Sub
+            Public Sub Update()
+                Dim lNowTicks As Long = DateTime.Now.Ticks
+                Dim tsNow As TimeSpan = TimeSpan.FromTicks(lNowTicks - lUpdateLastTicks)
+                lUpdateLastTicks = lNowTicks
+
+                fUpdateAccumulator += tsNow.TotalSeconds
+
+                If (fUpdateAccumulator > fUpdateInterval) Then
+                    bCanIterate = True
+                Else
+                    bCanIterate = False
+                End If
+            End Sub
+            Public Sub Iterate()
+                fUpdateAccumulator -= fUpdateInterval
+                If (fUpdateAccumulator > fUpdateInterval) Then
+                    bCanIterate = True
+                Else
+                    bCanIterate = False
+                End If
+            End Sub
+        End Structure
+
+        Private itEffect As New IterationTime(1.0 / 30.0)
+        Private itUpdate As New IterationTime(1.0 / 120.0)
+        Private itDraw As New IterationTime(1.0 / 12.0)
+        Private fTotalTime As New Single
+
+
         'The game function that handels the effectThread
         Public Sub UpdateEffects()
             While gEffectThread.IsAlive And gUpdateThread.IsAlive
-                _STARTEFFECTTIME = System.Diagnostics.Stopwatch.GetTimestamp
-
-                'Update the effects
-                gUpdateEffects(delta)
-
-                System.Diagnostics.Debug.WriteLine(gGameEntitys.Count)
-                'Sleep for the appropriate time taking into account the time it takes to process this loop
-                Thread.Sleep(GameMath.ClampDouble(_UPDATETIME - ((System.Diagnostics.Stopwatch.GetTimestamp - _STARTEFFECTTIME) / 1000), 1, _UPDATETIME))
+                itEffect.Update()
+                While itEffect.bCanIterate
+                    itEffect.Iterate()
+                    gUpdateEffects(itEffect.fUpdateDelta) 'Update the effects
+                End While
+                Thread.Sleep(5)
             End While
             Exits()
         End Sub
 
-        'The games update thread (TPS/UPS)
-        Dim updateAccumulator As New Single
-        Const updateTime As Single = 1.0 / 100.0
-        Const delta As Single = updateTime
-        Dim TotalTime As New Single
         Public Sub Update()
             'If the host computer has more then 2 virtual cores then enable the second thread.
             If _CoreCount >= 2 Then
@@ -143,48 +155,41 @@ Namespace Isotope
                 gEffectThread.Start()
             End If
             While gUpdateThread.IsAlive
-
-                _STARTUPDATETIME = System.Diagnostics.Stopwatch.GetTimestamp
-                'Update the gametime ready for this update iteration
-                gGameTime = getGameTime
-                updateAccumulator += gGameTime.DeltaTime
-                If (updateAccumulator >= 0.25) Then
-                    updateAccumulator = 0.25
+                If Not bUsingEffectThread Then
+                    itEffect.Update()
+                    While itEffect.bCanIterate
+                        itEffect.Iterate()
+                        gUpdateEffects(itEffect.fUpdateDelta) 'Update the effects
+                    End While
                 End If
-                While (updateAccumulator > updateTime)
-                    updateAccumulator -= updateTime
-                    TotalTime += delta
+                itUpdate.Update()
+                While itUpdate.bCanIterate
+                    itUpdate.Iterate()
+                    fTotalTime += itUpdate.fUpdateDelta
+
+
 
                     'Update the Keyboard+Mouse State if the client is currently viewing the game
                     If gViewport.Focused Then
                         gCurrentKeyboardState = OpenTK.Input.Keyboard.GetState()
                         gCurrentMouseState = OpenTK.Input.Mouse.GetState()
-                    End If
-
-                    'Update the GameLogic
-                    gUpdate(updateTime)
-
-                    'If not using a thread for the effects, then update the effects using this thread.
-                    If Not bUsingEffectThread Then
-                        gUpdateEffects(updateTime)
+                    Else
+                        gCurrentKeyboardState = New OpenTK.Input.KeyboardState
+                        gCurrentMouseState = New OpenTK.Input.MouseState
                     End If
 
                     'Update the Keyboard+Mouse State
                     gPreviousMouseState = gCurrentMouseState
                     gPreviousKeyboardState = gCurrentKeyboardState
 
-                    'Sleep for the appropriate time taking into account the time it takes to process this loop
-                    Thread.Sleep(GameMath.ClampDouble(_UPDATETIME - ((System.Diagnostics.Stopwatch.GetTimestamp - _STARTUPDATETIME) / 1000), 1, _UPDATETIME))
-
+                    gUpdate(itUpdate.fUpdateDelta) 'Update the effects
                 End While
+
+                Thread.Sleep(5)
             End While
             Exits()
         End Sub
 
-
-        'The games draw thread (FPS) [Main Thread]
-        Dim drawAccumulator As New Single
-        Dim drawTime As New Single
         Public Sub Draw() Handles gViewport.RenderFrame
             If (gViewport.IsExiting) Then
                 Exits()
@@ -210,7 +215,7 @@ Namespace Isotope
             '<<<ALL SPECIFIC DRAWING CODE BELOW HERE>>>
 
             'Begin the gDraw() Logic Function
-            gDraw()
+            gDraw(itDraw.fUpdateDelta)
 
             '<<ALL SPECIFIC DRAWING CODE ABOVE HERE>>>
             'Disables Rendering Textures with the current pass.

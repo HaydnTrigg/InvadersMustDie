@@ -154,6 +154,8 @@ Public Class PlayerShip
 #Region "Variables and Properties"
     Public vAcceleration As Vector2 = New Vector2(0)
 
+    Public iKills As Integer
+    Public iGunLevel As Integer
 #End Region
 #Region "Initializers"
 
@@ -174,7 +176,7 @@ Public Class PlayerShip
 
         'Defines the extra boost speed of the Object
         fBoostSpeedMax = 150.0F
-
+        iGunLevel = 1
     End Sub
 
 #End Region
@@ -199,6 +201,19 @@ Public Class PlayerShip
             End If
         End If
 
+        'Weapon Level
+        If iKills > 20 Then
+            iGunLevel = 2
+            If iKills > 40 Then
+                iGunLevel = 3
+                If iKills > 75 Then
+                    iGunLevel = 4
+                    If iKills > 100 Then
+                        iGunLevel = 5
+                    End If
+                End If
+            End If
+        End If
 
         Dim v As Vector2 = _Target - vPosition
         If (v.X = 0 And v.Y = 0) Then
@@ -221,16 +236,8 @@ Public Class PlayerShip
         tt += delta
 
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One) 'Use additive blending with transparency
-        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, fRotation)
-
-        GL.Color4(1.0F, 1.0F, 1.0F, GameMath.ClampFloat(Math.Abs(Math.Sin(tt)), 0, 1) * 0.8)
-        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize * 0.8, fRotation)
-        GL.Color4(1.0F, 1.0F, 1.0F, GameMath.ClampFloat(Math.Abs(Math.Sin(tt - 0.25)), 0, 1) * 0.8)
-        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize * 0.7, fRotation)
-        GL.Color4(1.0F, 1.0F, 1.0F, GameMath.ClampFloat(Math.Abs(Math.Sin(tt - 0.45)), 0, 1) * 0.8)
-        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize * 0.6, fRotation)
-        GL.Color4(1.0F, 1.0F, 1.0F, 1.0F)
-
+        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, 0)
+        Draw2dRotated(gViewport, iTextureIdentification(1), vPosition, vSize, fRotation)
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha) 'Use linear transparency blending [default]
 
 
@@ -239,13 +246,34 @@ Public Class PlayerShip
 #End Region
 End Class
 
-Public Class Spinner
+Public Class Enemy
     Inherits GameObject
-
 #Region "Enumeration & Structures"
+    Public Structure ExplosionEffect
+        Dim cColor As Color4
+        Dim fTime As Single
+        Dim fDeathRandomise As Single
+        Dim iDeathNumber As Integer
+        Dim fDeathTime As Single
+        Dim fSpeed As Single
+
+        Public Sub New(ByVal color As Color4, ByVal time As Single, ByVal speed As Single, ByVal deathrandomise As Single, ByVal deathnumber As Integer, ByVal deathtime As Single)
+            cColor = color
+            fTime = time
+            fDeathRandomise = deathrandomise
+            iDeathNumber = deathnumber
+            fDeathTime = deathtime
+            fSpeed = speed
+        End Sub
+    End Structure
 
 #End Region
 #Region "Variables and Properties"
+    Public eeExplosionEffect As New ExplosionEffect(New Color4(1.0F, 1.0F, 1.0F, 1.0F), 0.5F, 50, 0, 1, 1)
+
+    Public bCreateExplosion = False
+
+    Public fHealthPercent = 1.0
 
 #End Region
 #Region "Initializers"
@@ -253,17 +281,12 @@ Public Class Spinner
     Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer)
         MyBase.New(_Position, _Size, _TextureID)
 
-        'Set the Entity's acceleration to 150
-        fAcceleration = 150.0F
-        'Set the maximum speed of the Entity to 150
-        fSpeedMax = 60.0F + (_Random.NextDouble() * 80.0F)
-
-        fDieTime = 0.1
-
-        fHealth = 133 + (_Random.NextDouble() * 20)
-
         'Add extra code below
         eEntity = ObjectType.Enemy
+
+        If (eLifeState = LifeState.Dead) Then
+            bCreateExplosion = True
+        End If
     End Sub
 
 #End Region
@@ -271,8 +294,53 @@ Public Class Spinner
 
     'Override Update statement.
     Public Overrides Sub Update(ByVal delta As Single, ByVal gRandom As Random, ByVal _Target As Vector2)
-        Select Case eLifeState
+        fHealthPercent = fHealth / fMaxHealth
+    End Sub
 
+    Public Overrides Sub Draw(ByVal delta As Single, ByVal gViewport As Viewport)
+    End Sub
+
+#End Region
+End Class
+
+Public Class Revolver
+    Inherits Enemy
+
+#Region "Enumeration & Structures"
+
+#End Region
+#Region "Variables and Properties"
+    Dim bCanHaveExplosion As Boolean() = {True, True}
+#End Region
+#Region "Initializers"
+
+    Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer)
+        MyBase.New(_Position, _Size, _Random, _TextureID)
+
+        'Set the Entity's acceleration to 150
+        fAcceleration = 150.0F
+        'Set the maximum speed of the Entity to 150
+        fSpeedMax = 90.0F + (_Random.NextDouble() * 120.0F)
+
+        fDieTime = 0.15
+
+        fMaxHealth = 133 + (_Random.NextDouble() * 20)
+        fHealth = fMaxHealth
+
+        'Add extra code below
+        eEntity = ObjectType.Enemy
+
+        eeExplosionEffect = New ExplosionEffect(New Color4(0.1F, 1.0F, 0.1F, 1.0F), 0.5F, 75, 100.0, 5, 0.4)
+    End Sub
+
+#End Region
+#Region "Main Methods"
+
+    'Override Update statement.
+    Public Overrides Sub Update(ByVal delta As Single, ByVal gRandom As Random, ByVal _Target As Vector2)
+        MyBase.Update(delta, gRandom, _Target)
+
+        Select Case eLifeState
             Case LifeState.Alive
                 ' :: ALIVE ::
                 'Accelerate the object and clamp its speed to the maximum.
@@ -285,7 +353,7 @@ Public Class Spinner
                 vPosition = GameMath.ClampVector(vPosition + vMovement * delta * fSpeed, vSize / 2, New Vector2(1000.0F) - vSize / 2)
 
                 'Spin the entity around and change it a little so it dosen't mimic every other entity.
-                fRotation += delta * (0.5F + gRandom.NextDouble()) * 3
+                fRotation += delta * (0.5F + gRandom.NextDouble()) * 4 * fHealthPercent
 
                 If (fHealth <= 0) Then
                     eLifeState = GameObject.LifeState.Dying
@@ -293,17 +361,122 @@ Public Class Spinner
 
             Case LifeState.Dying
                 ' :: DYING/DEAD ::
-                vSize += delta * 500
+                vSize += delta * 1500
                 fDieTimeAccumulator += delta
                 If (fDieTimeAccumulator >= fDieTime) Then
                     eLifeState = LifeState.Dead
                 End If
         End Select
+
+        If (fHealthPercent < 0.65) Then
+            If (bCanHaveExplosion(0)) Then
+                bCanHaveExplosion(0) = False
+                bCreateExplosion = True
+            End If
+
+            If (fHealthPercent < 0.35) Then
+                If (bCanHaveExplosion(1)) Then
+                    bCanHaveExplosion(1) = False
+                    bCreateExplosion = True
+                End If
+            End If
+        End If
+
+
+
+
     End Sub
 
     Public Overrides Sub Draw(ByVal delta As Single, ByVal gViewport As Viewport)
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One) 'Use additive blending with transparency
-        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, fRotation)
+        If (fHealthPercent > 0.65) Then 'atleast 80%
+            Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize * fHealthPercent, -fRotation * 2.0F)
+
+        End If
+        Draw2dRotated(gViewport, iTextureIdentification(1), vPosition, vSize * Math.Max(fHealthPercent, 0.75), fRotation * 1.5F)
+        Draw2dRotated(gViewport, iTextureIdentification(2), vPosition, vSize, 0)
+        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha) 'Use linear transparency blending [default]
+    End Sub
+
+#End Region
+End Class
+
+Public Class Spinner
+    Inherits Enemy
+
+#Region "Enumeration & Structures"
+
+#End Region
+#Region "Variables and Properties"
+    Dim bCanHaveExplosion As Boolean() = {True}
+#End Region
+#Region "Initializers"
+
+    Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer)
+        MyBase.New(_Position, _Size, _Random, _TextureID)
+
+        'Set the Entity's acceleration to 150
+        fAcceleration = 150.0F
+        'Set the maximum speed of the Entity to 150
+        fSpeedMax = 80 + (_Random.NextDouble() * 80)
+
+        fDieTime = 0.15
+
+        fMaxHealth = 53 + (_Random.NextDouble() * 10)
+        fHealth = fMaxHealth
+        'Add extra code below
+        eEntity = ObjectType.Enemy
+
+        eeExplosionEffect = New ExplosionEffect(New Color4(1.0F, 0.1F, 0.1F, 1.0F), 0.5F, 75, 0.0, 1, 0.8)
+    End Sub
+
+#End Region
+#Region "Main Methods"
+
+    Public Overrides Sub Update(ByVal delta As Single, ByVal gRandom As Random, ByVal _Target As Vector2)
+        MyBase.Update(delta, gRandom, _Target)
+
+        Select Case eLifeState
+            Case LifeState.Alive
+                ' :: ALIVE ::
+                'Accelerate the object and clamp its speed to the maximum.
+                fSpeed = GameMath.ClampFloat(fSpeed + fAcceleration * delta, 0, fSpeedMax)
+
+                'Smooth the vMovement using linear interpolation against a calculated normal specifying the direction of the target.
+                vMovement = GameMath.Lerp(vMovement, GameMath.NormalizeVector2(_Target - vPosition), delta)
+
+                'Calculate and clamp the position.
+                vPosition = GameMath.ClampVector(vPosition + vMovement * delta * fSpeed, vSize / 2, New Vector2(1000.0F) - vSize / 2)
+
+                'Spin the entity around and change it a little so it dosen't mimic every other entity.
+                fRotation += delta * (0.5F + gRandom.NextDouble()) * 4.5 * fHealthPercent
+
+                If (fHealth <= 0) Then
+                    eLifeState = GameObject.LifeState.Dying
+                End If
+
+            Case LifeState.Dying
+                ' :: DYING/DEAD ::
+                vSize += delta * 1500
+                fDieTimeAccumulator += delta
+                If (fDieTimeAccumulator >= fDieTime) Then
+                    eLifeState = LifeState.Dead
+                End If
+        End Select
+
+        If (fHealthPercent < 0.5) Then
+            If (bCanHaveExplosion(0)) Then
+                bCanHaveExplosion(0) = False
+                bCreateExplosion = True
+            End If
+        End If
+
+    End Sub
+
+    Public Overrides Sub Draw(ByVal delta As Single, ByVal gViewport As Viewport)
+        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One) 'Use additive blending with transparency
+        'Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, fRotation)
+        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize * Math.Max(fHealthPercent, 0.6), fRotation)
         Draw2dRotated(gViewport, iTextureIdentification(1), vPosition, vSize, 0)
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha) 'Use linear transparency blending [default]
     End Sub
@@ -311,39 +484,45 @@ Public Class Spinner
 #End Region
 End Class
 
-Public Class Revolver
-    Inherits GameObject
+Public Class Pulser
+    Inherits Enemy
 
 #Region "Enumeration & Structures"
 
 #End Region
 #Region "Variables and Properties"
-
+    Dim bCanHaveExplosion As Boolean() = {True}
+    Dim fPulseTime As Single
 #End Region
 #Region "Initializers"
 
     Sub New(ByVal _Position As Vector2, ByVal _Size As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer)
-        MyBase.New(_Position, _Size, _TextureID)
+        MyBase.New(_Position, _Size, _Random, _TextureID)
 
         'Set the Entity's acceleration to 150
         fAcceleration = 150.0F
         'Set the maximum speed of the Entity to 150
         fSpeedMax = 80 + (_Random.NextDouble() * 80)
 
-        fDieTime = 0.1
+        fDieTime = 0.15
 
-        fHealth = 23 + (_Random.NextDouble() * 10)
-
+        fMaxHealth = 23 + (_Random.NextDouble() * 10)
+        fHealth = fMaxHealth
         'Add extra code below
         eEntity = ObjectType.Enemy
+
+        eeExplosionEffect = New ExplosionEffect(New Color4(1.0F, 0.55F, 0.1F, 1.0F), 0.5F, 80, 0.0, 1, 0.4)
+
+        fPulseTime += _Random.NextDouble() * 100
     End Sub
 
 #End Region
 #Region "Main Methods"
 
     Public Overrides Sub Update(ByVal delta As Single, ByVal gRandom As Random, ByVal _Target As Vector2)
-        Select Case eLifeState
+        MyBase.Update(delta, gRandom, _Target)
 
+        Select Case eLifeState
             Case LifeState.Alive
                 ' :: ALIVE ::
                 'Accelerate the object and clamp its speed to the maximum.
@@ -356,7 +535,7 @@ Public Class Revolver
                 vPosition = GameMath.ClampVector(vPosition + vMovement * delta * fSpeed, vSize / 2, New Vector2(1000.0F) - vSize / 2)
 
                 'Spin the entity around and change it a little so it dosen't mimic every other entity.
-                fRotation += delta * (0.5F + gRandom.NextDouble()) * 3
+                fRotation += delta * (0.5F + gRandom.NextDouble()) * 4.5 * fHealthPercent
 
                 If (fHealth <= 0) Then
                     eLifeState = GameObject.LifeState.Dying
@@ -364,19 +543,29 @@ Public Class Revolver
 
             Case LifeState.Dying
                 ' :: DYING/DEAD ::
-                vSize += delta * 500
+                vSize += delta * 1500
                 fDieTimeAccumulator += delta
                 If (fDieTimeAccumulator >= fDieTime) Then
                     eLifeState = LifeState.Dead
                 End If
         End Select
+
+        If (fHealthPercent < 0.5) Then
+            If (bCanHaveExplosion(0)) Then
+                bCanHaveExplosion(0) = False
+                bCreateExplosion = True
+            End If
+        End If
+
     End Sub
 
     Public Overrides Sub Draw(ByVal delta As Single, ByVal gViewport As Viewport)
+        fPulseTime += delta
+
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One) 'Use additive blending with transparency
-        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, -fRotation * 2.0F)
-        Draw2dRotated(gViewport, iTextureIdentification(1), vPosition, vSize, fRotation * 1.5F)
-        Draw2dRotated(gViewport, iTextureIdentification(2), vPosition, vSize, 0)
+        'Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, fRotation)
+        Draw2dRotated(gViewport, iTextureIdentification(0), vPosition, vSize, 0)
+        Draw2dRotated(gViewport, iTextureIdentification(1), vPosition, vSize * Math.Max(fHealthPercent * Math.Sqrt(Math.Sin(fPulseTime) * Math.Sin(fPulseTime)), 0.6), fRotation)
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha) 'Use linear transparency blending [default]
     End Sub
 
@@ -404,7 +593,7 @@ Public Class Bullet
 #End Region
 #Region "Initializers"
 
-    Sub New(ByVal _Position As Vector2, ByVal _MousePosition As Vector2, ByVal _Size As Vector2, ByVal _Parent As PlayerShip, ByVal _TextureID() As Integer, ByVal _ColorTarget As Color4, ByVal _Lifespan As Single, ByVal _Algorithm As ParticleAlgorithm)
+    Sub New(ByVal _Position As Vector2, ByVal _MousePosition As Vector2, ByVal _Size As Vector2, ByVal _Parent As PlayerShip, ByVal angle As Single, ByVal _TextureID() As Integer, ByVal gRandom As System.Random, ByVal _ColorTarget As Color4, ByVal _Lifespan As Single, ByVal _Algorithm As ParticleAlgorithm)
         MyBase.New(_Position, _Size, _TextureID)
 
         'Define the acceleration of the of the object
@@ -425,7 +614,11 @@ Public Class Bullet
         eParticleAlgorithm = _Algorithm
 
         'Assign the objects movement.
-        vMovement = GameMath.NormalizeVector2(_MousePosition - _Position)
+        Dim vTargetDirection = _MousePosition - _Position
+        Dim fTargetAngle = Math.Atan2(vTargetDirection.Y, vTargetDirection.X) + (angle / 180)
+        Dim fRandomAngle = ((gRandom.NextDouble() - 0.5) * 2) * (3 / 180) * Math.PI 'Random Angle between +- 3 degrees
+        vMovement.X = Math.Cos(fTargetAngle + fRandomAngle)
+        vMovement.Y = Math.Sin(fTargetAngle + fRandomAngle)
 
         vInertia = _Parent.vMovement * _Parent.fSpeed
 
@@ -436,7 +629,7 @@ Public Class Bullet
 
     Public Overrides Sub Update(ByVal delta As Single, ByVal gRandom As System.Random, ByVal _Movement As Vector2)
 
-        vPosition += ((vMovement * fSpeed) + (vInertia)) * delta
+        vPosition += ((vMovement * fSpeed)) * delta
         fRotation = vMovement.Rotation
 
         'Calculate the current color of the particle object.
@@ -491,17 +684,23 @@ Public Class Explosion
     'The size the particles for drawing.
     Dim vDrawSize As New Vector2(18.0F, 2.0F)
 
+    Dim bCollisionCheck As Boolean
+
+    Dim fSpeedMul As Single = 2.0
+
 #End Region
 #Region "Initializers"
 
-    Sub New(ByVal _Position As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer, ByVal _ParticleLevel As Single, ByVal _ColorTarget As Color4, ByVal _Lifespan As Single, ByVal _Algorithm As ParticleAlgorithm)
+    Sub New(ByVal _Position As Vector2, ByVal _Random As Random, ByVal _TextureID() As Integer, ByVal _ParticleLevel As Single, ByVal _ColorTarget As Color4, ByVal _Lifespan As Single, ByVal _CollisionCheck As Boolean, ByVal _Speed As Single)
         MyBase.New(_Position, New Vector2(0), _TextureID)
+
+        bCollisionCheck = _CollisionCheck ' Assign the collision checking parameter
 
         'Calculate the amount of particles that will be created.
         Dim fRavg As Single = (1.5 * 200 / 100) * _Lifespan 'Calculate the average radius of the spread
         Dim fC = 2.0 * Math.PI * fRavg 'Calculate the average circumference
         Dim iParticleCount As Integer = GameMath.ClampInteger(fC * _ParticleLevel, 0, Integer.MaxValue) - 1
-        iParticleCount *= 2
+        iParticleCount *= 3
 
         ' Create an array to store all the particles
         vParticles = New Particle(iParticleCount) {}
@@ -512,7 +711,7 @@ Public Class Explosion
             Dim angle As Double = _Random.NextDouble() * 2.0 * Math.PI '0-360 degrees in radians
             vParticles(i).direction = New Vector2(Math.Cos(angle), Math.Sin(angle)) 'Set the direction as a vector
 
-            vParticles(i).speed = (_Random.NextDouble() + 1) * 200
+            vParticles(i).speed = (_Random.NextDouble() + 1) * _Speed
 
             vParticles(i).movement = vParticles(i).direction * vParticles(i).speed
             vParticles(i).rotation = vParticles(i).movement.Rotation
@@ -537,16 +736,17 @@ Public Class Explosion
         fSpeedMax = 400.0F
 
         'Define the lifespan of the particle.
-        fLifespanMax = _Lifespan * 0.5
+        fLifespanMax = _Lifespan
 
         'Define the color of the particle.
         cColorTarget = _ColorTarget
+        cColorTarget.A = 0
 
         'Define the type of object as "Other"
         eEntity = ObjectType.Other
 
         'Define an algorithm to use with the particles.
-        eParticleAlgorithm = _Algorithm
+        'eParticleAlgorithm = _Algorithm
     End Sub
 
 #End Region
@@ -577,20 +777,29 @@ Public Class Explosion
         '    vPositions(i) = GameMath.ClampVectorSingle(vPositions(i) + (vParticleMovement(i) * vSpeed(i) * delta), 4.0F, 4.0F, 996.0F, 996.0F)
         'Next
 
+        fSpeedMul -= delta * 1.75
+        fSpeedMul = GameMath.ClampFloat(fSpeedMul, 1, Single.MaxValue)
+
         For i As Integer = 0 To vParticles.Length - 1
             'Check if the particle collides with the boundary on the X axis.
-            If vParticles(i).position.X >= 995.0F Or vParticles(i).position.X <= 5.0F Then
-                vParticles(i).movement.X *= -1
-                vParticles(i).rotation = vParticles(i).movement.Rotation
-            Else
-                'Check if the particle collides with the boundary on the Y axis.
-                If vParticles(i).position.Y >= 995.0F Or vParticles(i).position.Y <= 5.0F Then
-                    vParticles(i).movement.Y *= -1
+            If (bCollisionCheck) Then
+
+                If vParticles(i).position.X >= 995.0F Or vParticles(i).position.X <= 5.0F Then
+                    vParticles(i).movement.X *= -1
                     vParticles(i).rotation = vParticles(i).movement.Rotation
+                Else
+                    'Check if the particle collides with the boundary on the Y axis.
+                    If vParticles(i).position.Y >= 995.0F Or vParticles(i).position.Y <= 5.0F Then
+                        vParticles(i).movement.Y *= -1
+                        vParticles(i).rotation = vParticles(i).movement.Rotation
+                    End If
                 End If
+                'vParticles(i).position = GameMath.ClampVectorSingle(vParticles(i).position + (vParticles(i).direction * vParticles(i).speed * delta), 4.0F, 4.0F, 996.0F, 996.0F)
+                vParticles(i).position = GameMath.ClampVectorSingle(vParticles(i).position + (vParticles(i).movement * fSpeedMul * delta), 5.0F, 5.0F, 995.0F, 995.0F)
+            Else
+                vParticles(i).position += (vParticles(i).movement * fSpeedMul * delta)
             End If
-            'vParticles(i).position = GameMath.ClampVectorSingle(vParticles(i).position + (vParticles(i).direction * vParticles(i).speed * delta), 4.0F, 4.0F, 996.0F, 996.0F)
-            vParticles(i).position = GameMath.ClampVectorSingle(vParticles(i).position + (vParticles(i).movement * delta), 5.0F, 5.0F, 995.0F, 995.0F)
+
         Next
 
         'Calculate the current color of the particle object.

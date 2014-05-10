@@ -101,6 +101,21 @@ Public NotInheritable Class Vector2
         Y *= val
     End Sub
 
+    Shared Function Normalize(ByVal v As Vector2) As Vector2
+        Dim r As New Vector2(0, 0)
+        Dim val As Single = 1.0F / CSng(Math.Sqrt((v.X * v.X) + (v.Y * v.Y)))
+        r.X *= val
+        r.Y *= val
+        Return r
+    End Function
+
+    Shared Function Length(ByVal v As Vector2) As Single
+        Return Math.Sqrt(v.X * v.X + v.Y + v.Y)
+    End Function
+
+    Shared Function Angle(ByVal v As Vector2) As Single
+        Return Math.Atan2(v.Y, v.X)
+    End Function
 
 #End Region
 
