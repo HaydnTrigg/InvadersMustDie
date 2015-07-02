@@ -16,7 +16,7 @@ About the Project
 						it was never implemented. The goal was to add the FMOD audio API using the
 						C#/.NET library.
 						
-Remaning Feature List
+Remaining Feature List
 ---------
 * Implement Audio API
 * Add Scoring Display
