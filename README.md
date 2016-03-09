@@ -2,7 +2,7 @@ Invaders Must Die
 =====================
 
 Invaders Must Die is a small video game project created by Haydn Trigg as a Year 11 Information Technology
-project. It was created using Visual Basic and the OpenTK library to utilize OpenGL functionality.
+project. It was created using C#* and the OpenTK library to utilize OpenGL functionality.
 
 ![Screenshot](http://raw.github.com/haydntrigg/InvadersMustDie/master/doc/images/banner.jpg)
 
