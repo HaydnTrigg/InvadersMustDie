@@ -418,12 +418,13 @@ namespace Isotope
                             gQuadTree.Insert(gGameEntitys[i].vPosition, i);
                         }
 
-					#if DEBUG
+					
 					} catch (Exception ex) {
+#if DEBUG
 						Console.WriteLine("PROBLEM WITH QUADTREE COLLISIONS!!!");
 						Console.WriteLine(ex.Message);
-						#endif
-						gQuadTree = null;
+#endif
+                        gQuadTree = null;
 					}
 
 					if ((gQuadTree != null)) {
@@ -600,12 +601,13 @@ namespace Isotope
 						}
 					}
 				}
-			#if DEBUG
+			
 			} catch (Exception ex) {
+#if DEBUG
 				Console.WriteLine(ex.Message);
-				#endif
-			}
-		}
+#endif
+            }
+        }
 
 		//The primary draw function
 		//This draw function has been setup for 2D Rendering using 3d primatives
@@ -692,13 +694,14 @@ namespace Isotope
 						g.Draw(delta, gViewport);
 					}
 				}
-			#if DEBUG
+			
 			} catch (Exception ex) {
+#if DEBUG
 				Console.WriteLine(ex.Message);
-				#endif
-			}
-			//After drawing all of the particles reset the Drawing Color to White
-			GL.Color4(1f, 1f, 1f, 1f);
+#endif
+            }
+            //After drawing all of the particles reset the Drawing Color to White
+            GL.Color4(1f, 1f, 1f, 1f);
 		}
 
 		//Draw the entitys
